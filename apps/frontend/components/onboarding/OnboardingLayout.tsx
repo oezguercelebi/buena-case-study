@@ -36,7 +36,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
             {/* Left side - Close button */}
             <div className="flex-shrink-0">
               <button
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                 onClick={onCancel}
               >
                 <X className="h-5 w-5" />
