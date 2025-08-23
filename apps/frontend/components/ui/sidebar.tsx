@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils"
 import { Home, Building2 } from "lucide-react"
 
 const navigation = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Properties", href: "/properties", icon: Building2 },
+  { name: "Dashboard", href: "/", icon: Home },
+  { name: "Property Portfolio", href: "/properties", icon: Building2 },
 ]
 
 export function Sidebar() {

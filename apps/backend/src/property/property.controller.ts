@@ -12,6 +12,11 @@ export class PropertyController {
     return this.propertyService.findAll();
   }
 
+  @Get('stats')
+  getStats() {
+    return this.propertyService.getStats();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.propertyService.findOne(id);

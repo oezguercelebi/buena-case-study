@@ -40,6 +40,25 @@ export class PropertyService {
     return this.properties.find(property => property.id === id);
   }
 
+  getStats() {
+    const totalProperties = this.properties.length;
+    const wegProperties = this.properties.filter(p => p.type === 'WEG').length;
+    const mvProperties = this.properties.filter(p => p.type === 'MV').length;
+    const totalUnits = this.properties.reduce((sum, p) => sum + p.unitCount, 0);
+    const activeProperties = this.properties.filter(p => p.status === 'active').length;
+    const draftProperties = this.properties.filter(p => p.status === 'draft').length;
+    
+    return {
+      totalProperties,
+      wegProperties,
+      mvProperties,
+      totalUnits,
+      activeProperties,
+      draftProperties,
+      averageUnitsPerProperty: totalProperties > 0 ? Math.round(totalUnits / totalProperties) : 0,
+    };
+  }
+
   update(id: string, updatePropertyDto: Partial<CreatePropertyDto>) {
     const index = this.properties.findIndex(property => property.id === id);
     if (index === -1) {

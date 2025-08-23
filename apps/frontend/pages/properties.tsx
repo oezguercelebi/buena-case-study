@@ -48,7 +48,7 @@ export default function PropertiesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Properties</h1>
+            <h1 className="text-3xl font-bold text-foreground">Property Portfolio</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Manage your WEG and MV properties
             </p>

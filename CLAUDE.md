@@ -74,3 +74,4 @@ npm run dev --workspace=backend
 - Performance target: <15 min for 60-unit property entry
 - Backend uses in-memory storage (no database integration)
 - No authentication system implemented yet
+- Never change the port of our backend and frontend. If you want to check kill the others and start your own.
