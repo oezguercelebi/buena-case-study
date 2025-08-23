@@ -61,8 +61,8 @@ export default function PropertiesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Properties</h1>
-            <p className="mt-1 text-sm text-gray-600">
+            <h1 className="text-3xl font-bold text-foreground">Properties</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Manage your WEG and MV properties
             </p>
           </div>
@@ -76,25 +76,25 @@ export default function PropertiesPage() {
 
         <div className="grid gap-4">
           {properties.map((property) => (
-            <Card key={property.id} className="p-6 hover:shadow-lg transition-shadow">
+            <Card key={property.id} className="p-6 hover:shadow-lg transition-shadow bg-card">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <Building2 className="h-5 w-5 text-gray-400" />
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold text-card-foreground">
                       {property.name}
                     </h3>
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         property.type === "WEG"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-green-100 text-green-800"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-accent text-accent-foreground"
                       }`}
                     >
                       {property.type}
                     </span>
                     {property.status === "draft" && (
-                      <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                      <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                         Draft
                       </span>
                     )}
@@ -102,22 +102,22 @@ export default function PropertiesPage() {
                   
                   <div className="mt-3 grid grid-cols-3 gap-6 text-sm">
                     <div>
-                      <p className="text-gray-500">Property Number</p>
-                      <p className="font-medium text-gray-900">{property.propertyNumber}</p>
+                      <p className="text-muted-foreground">Property Number</p>
+                      <p className="font-medium text-card-foreground">{property.propertyNumber}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Units</p>
-                      <p className="font-medium text-gray-900">{property.unitCount}</p>
+                      <p className="text-muted-foreground">Units</p>
+                      <p className="font-medium text-card-foreground">{property.unitCount}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Last Modified</p>
-                      <p className="font-medium text-gray-900">
+                      <p className="text-muted-foreground">Last Modified</p>
+                      <p className="font-medium text-card-foreground">
                         {new Date(property.lastModified).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                  <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4" />
                     {property.address}
                   </div>
@@ -137,13 +137,13 @@ export default function PropertiesPage() {
         </div>
 
         {properties.length === 0 && (
-          <Card className="p-12">
+          <Card className="p-12 bg-card">
             <div className="text-center">
-              <Home className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-4 text-lg font-medium text-gray-900">
+              <Home className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium text-card-foreground">
                 No properties yet
               </h3>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Get started by creating your first property.
               </p>
               <Link href="/onboarding">

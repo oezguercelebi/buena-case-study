@@ -6,7 +6,10 @@
       "Bash(npx:*)",
       "Bash(npm install)",
       "Bash(npm install:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Read(//Users/oezguercelebi/GitHub/property-onboarding-flow/apps/frontend/src/app/onboarding/**)",
+      "Read(//Users/oezguercelebi/GitHub/property-onboarding-flow/apps/frontend/src/components/ui/**)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
