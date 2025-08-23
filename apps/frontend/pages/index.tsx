@@ -1,12 +1,18 @@
-import { Container, Heading, Text, Flex } from '@radix-ui/themes'
+import { DashboardLayout } from '@/components/ui/dashboard-layout'
 
-export default function Dashboard() {
+export default function Home() {
   return (
-    <Container size="4" p="8" style={{ minHeight: '100vh' }}>
-      <Flex direction="column" gap="4">
-        <Heading size="8">Buena Dashboard</Heading>
-        <Text color="gray" size="3">Property management dashboard placeholder</Text>
-      </Flex>
-    </Container>
+    <DashboardLayout>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Welcome to Buena
+          </h1>
+          <p className="text-lg text-gray-600">
+            Property Management System
+          </p>
+        </div>
+      </div>
+    </DashboardLayout>
   )
 }
