@@ -1,0 +1,272 @@
+@layer base {
+  :root {
+    /* Radix UI Color Scale - Light Mode */
+    
+    /* Primary Colors - Black/Charcoal */
+    --primary-1: 250 250 250; /* #fafafa */
+    --primary-2: 244 244 245; /* #f4f4f5 */
+    --primary-3: 228 228 231; /* #e4e4e7 */
+    --primary-4: 212 212 216; /* #d4d4d8 */
+    --primary-5: 161 161 170; /* #a1a1aa */
+    --primary-6: 113 113 122; /* #71717a */
+    --primary-7: 82 82 91; /* #52525b */
+    --primary-8: 63 63 70; /* #3f3f46 */
+    --primary-9: 39 39 42; /* #27272a */
+    --primary-10: 24 24 27; /* #18181b */
+    --primary-11: 9 9 11; /* #09090b */
+    --primary-12: 0 0 0; /* #000000 */
+    
+    /* Gray Scale - Warm Stone */
+    --gray-1: 250 250 249; /* #fafaf9 */
+    --gray-2: 245 245 244; /* #f5f5f4 */
+    --gray-3: 231 229 228; /* #e7e5e4 */
+    --gray-4: 214 211 209; /* #d6d3d1 */
+    --gray-5: 168 162 158; /* #a8a29e */
+    --gray-6: 120 113 108; /* #78716c */
+    --gray-7: 87 83 78; /* #57534e */
+    --gray-8: 68 64 60; /* #44403c */
+    --gray-9: 41 37 36; /* #292524 */
+    --gray-10: 28 25 23; /* #1c1917 */
+    --gray-11: 12 10 9; /* #0c0a09 */
+    --gray-12: 255 255 255; /* #ffffff */
+    
+    /* Accent Colors - Gold/Bronze */
+    --accent-1: 253 253 248; /* #fdfdf8 */
+    --accent-2: 254 248 232; /* #fef8e8 */
+    --accent-3: 254 240 199; /* #fef0c7 */
+    --accent-4: 253 230 138; /* #fde68a */
+    --accent-5: 252 211 77; /* #fcd34d */
+    --accent-6: 245 158 11; /* #f59e0b */
+    --accent-7: 217 119 6; /* #d97706 */
+    --accent-8: 180 83 9; /* #b45309 */
+    --accent-9: 146 64 14; /* #92400e */
+    --accent-10: 120 53 15; /* #78350f */
+    --accent-11: 69 26 3; /* #451a03 */
+    
+    /* Semantic Colors */
+    --success: 74 222 128; /* #4ade80 */
+    --success-light: 168 230 163; /* #a8e6a3 */
+    --success-dark: 22 101 52; /* #166534 */
+    
+    --warning: 245 158 11; /* #f59e0b */
+    --warning-light: 252 211 77; /* #fcd34d */
+    --warning-dark: 146 64 14; /* #92400e */
+    
+    --error: 220 38 38; /* #dc2626 */
+    --error-light: 252 165 165; /* #fca5a5 */
+    --error-dark: 69 10 10; /* #450a0a */
+    
+    --info: 100 116 139; /* #64748b */
+    --info-light: 203 213 225; /* #cbd5e1 */
+    --info-dark: 15 23 42; /* #0f172a */
+    
+    /* Background */
+    --background: 255 255 255; /* #ffffff */
+    --background-secondary: 248 250 252; /* #f8fafc */
+    --background-tertiary: 241 245 249; /* #f1f5f9 */
+    
+    /* Foreground/Text */
+    --foreground: 9 9 11; /* #09090b */
+    --foreground-secondary: 63 63 70; /* #3f3f46 */
+    --foreground-tertiary: 113 113 122; /* #71717a */
+    --foreground-muted: 161 161 170; /* #a1a1aa */
+    
+    /* Border */
+    --border: 228 228 231; /* #e4e4e7 */
+    --border-light: 244 244 245; /* #f4f4f5 */
+    --border-dark: 212 212 216; /* #d4d4d8 */
+    
+    /* Radix UI Specific */
+    --radius: 0.5rem;
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+    --radius-full: 9999px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    /* Typography Scale */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --font-size-5xl: 3rem;
+    
+    /* Line Heights */
+    --line-height-none: 1;
+    --line-height-tight: 1.25;
+    --line-height-snug: 1.375;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+    --line-height-loose: 2;
+    
+    /* Letter Spacing */
+    --letter-spacing-tighter: -0.05em;
+    --letter-spacing-tight: -0.025em;
+    --letter-spacing-normal: 0;
+    --letter-spacing-wide: 0.025em;
+    --letter-spacing-wider: 0.05em;
+    --letter-spacing-widest: 0.1em;
+    
+    /* Font Weights */
+    --font-weight-thin: 100;
+    --font-weight-extralight: 200;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-black: 900;
+  }
+  
+  /* Dark Mode */
+  .dark {
+    /* Primary Colors - Black/Charcoal (inverted for dark mode) */
+    --primary-1: 9 9 11; /* Dark background */
+    --primary-2: 24 24 27;
+    --primary-3: 39 39 42;
+    --primary-4: 63 63 70;
+    --primary-5: 82 82 91;
+    --primary-6: 113 113 122;
+    --primary-7: 161 161 170;
+    --primary-8: 212 212 216;
+    --primary-9: 228 228 231;
+    --primary-10: 244 244 245;
+    --primary-11: 250 250 250;
+    --primary-12: 255 255 255;
+    
+    /* Gray Scale - Warm Stone (inverted) */
+    --gray-1: 12 10 9;
+    --gray-2: 28 25 23;
+    --gray-3: 41 37 36;
+    --gray-4: 68 64 60;
+    --gray-5: 87 83 78;
+    --gray-6: 120 113 108;
+    --gray-7: 168 162 158;
+    --gray-8: 214 211 209;
+    --gray-9: 231 229 228;
+    --gray-10: 245 245 244;
+    --gray-11: 250 250 249;
+    --gray-12: 28 25 23;
+    
+    /* Background (dark mode) */
+    --background: 9 9 11;
+    --background-secondary: 24 24 27;
+    --background-tertiary: 39 39 42;
+    
+    /* Foreground/Text (dark mode) */
+    --foreground: 250 250 250;
+    --foreground-secondary: 228 228 231;
+    --foreground-tertiary: 212 212 216;
+    --foreground-muted: 161 161 170;
+    
+    /* Border (dark mode) */
+    --border: 63 63 70;
+    --border-light: 39 39 42;
+    --border-dark: 82 82 91;
+  }
+}
+
+/* Typography Classes */
+@layer utilities {
+  /* Headings */
+  .heading-1 {
+    font-size: var(--font-size-5xl);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+  }
+  
+  .heading-2 {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+  }
+  
+  .heading-3 {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-snug);
+  }
+  
+  .heading-4 {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-snug);
+  }
+  
+  .heading-5 {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+  }
+  
+  .heading-6 {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+  }
+  
+  /* Body Text */
+  .body-large {
+    font-size: var(--font-size-lg);
+    line-height: var(--line-height-relaxed);
+  }
+  
+  .body-base {
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+  }
+  
+  .body-small {
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+  }
+  
+  /* Labels */
+  .label-large {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-wide);
+  }
+  
+  .label-base {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-wide);
+  }
+  
+  .label-small {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-wider);
+    text-transform: uppercase;
+  }
+  
+  /* Code */
+  .code {
+    font-family: 'SF Mono', Monaco, 'Inconsolata', 'Fira Code', 'Courier New', monospace;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+  }
+  
+  /* Caption */
+  .caption {
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-normal);
+    color: rgb(var(--foreground-tertiary));
+  }
+}
