@@ -3,7 +3,7 @@ import { CreatePropertyDto } from './dto/create-property.dto';
 
 @Injectable()
 export class PropertyService {
-  private properties = [];
+  private properties: any[] = [];
 
   findAll() {
     return this.properties;
