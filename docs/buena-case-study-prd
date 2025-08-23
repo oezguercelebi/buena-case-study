@@ -1,0 +1,346 @@
+# Product Requirements Document
+## Buena Property Dashboard & Creation Flow
+
+### Executive Summary
+Build a property management dashboard with an efficient property creation flow that digitizes both WEG (condominium) and MV (rental) properties. The system must handle manual entry efficiently when documents are unavailable and provide AI-powered extraction when documents are provided.
+
+---
+
+## 1. Product Vision & Goals
+
+### Primary Objective
+Create a property onboarding system that can efficiently handle 60+ unit properties, reducing data entry time from hours to minutes.
+
+### Success Metrics
+- **Time to onboard:** < 15 minutes for 60-unit property (vs 2+ hours manual)
+- **Data accuracy:** 99%+ with validation checks
+- **User satisfaction:** Complete flow without documentation assistance
+- **Flexibility:** Support both document-based and manual entry workflows
+
+---
+
+## 2. User Personas
+
+### Property Manager (Primary)
+- Manages 10-50 properties
+- Time-constrained, efficiency-focused
+- May not have all documents immediately available
+- Needs to context-switch between properties frequently
+
+### Property Accountant (Secondary)
+- Requires accurate financial data
+- Focuses on ownership shares (WEG) or rent rolls (MV)
+- Needs exportable data for financial systems
+
+---
+
+## 3. Core Features
+
+### 3.1 Property Dashboard
+
+#### Requirements
+- **List View** showing all properties with:
+  - Property name
+  - Type indicator (WEG/MV)
+  - Unique property number
+  - Unit count
+  - Last modified date
+  - Completion status indicator
+
+- **Quick Actions:**
+  - Create new property (prominent CTA)
+  - Duplicate existing property as template
+  - Archive/Delete properties
+  - Export property data
+
+- **Search & Filter:**
+  - By property type
+  - By property manager
+  - By address/location
+  - By completion status
+
+### 3.2 Property Creation Flow
+
+#### Step 1: General Information
+
+**Smart Defaults & Helpers:**
+
+| Field | WEG Default/Helper | MV Default/Helper |
+|-------|-------------------|-------------------|
+| Property Name | Auto-suggest: "[Street] [Number] WEG" | Auto-suggest: "[Street] [Number]" |
+| Management Company | Pre-fill from user's company profile | Pre-fill from user's company profile |
+| Property Manager | Pre-fill current user | Pre-fill current user |
+| Accountant | Dropdown of frequent collaborators | Dropdown of frequent collaborators |
+
+**Document Upload (Optional):**
+- Drag & drop zone
+- Accepted formats: PDF, JPG, PNG
+- AI extraction toggle (on by default)
+- "Continue without document" prominent option
+
+#### Step 2: Building Data
+
+**Smart Building Templates:**
+```
+Quick Templates:
+□ Single Building (most common)
+□ 2-3 Building Complex
+□ 4+ Building Complex
+□ Custom Configuration
+```
+
+**For Each Building:**
+- **Address Autocomplete** using mapping API
+- **Building Type Selector:**
+  - Altbau (pre-war, typically 5 floors)
+  - Neubau (modern, typically 4-8 floors)
+  - Hochhaus (high-rise, 9+ floors)
+  - Mixed-use
+
+**Automatic Calculations:**
+- Based on building type selection:
+  - Suggest typical floor count
+  - Estimate units per floor
+  - Pre-fill construction year ranges
+
+#### Step 3: Units
+
+**Efficiency Features:**
+
+##### 3.3.1 Pattern Recognition Mode
+```
+"Detect Pattern" - System recognizes:
+- 2 units per floor, same layout → Auto-generate all floors
+- Decreasing unit sizes on upper floors → Apply gradient
+- Repeating room configurations → Template and replicate
+```
+
+##### 3.3.2 Bulk Entry Tools
+
+**Quick Add Templates:**
+
+| Template | Rooms | Size Range | Typical Use |
+|----------|-------|------------|-------------|
+| Studio | 1 | 25-40 m² | Student/Single |
+| 2-Room | 2 | 45-65 m² | Couple/Single |
+| 3-Room | 3 | 70-95 m² | Small Family |
+| 4-Room | 4 | 95-120 m² | Family |
+| 5+ Room | 5+ | 120+ m² | Large Family |
+
+**Grid Entry Mode:**
+- Excel-like interface for power users
+- Tab navigation between cells
+- Copy/paste support
+- Keyboard shortcuts (Ctrl+D for duplicate down)
+
+##### 3.3.3 Smart Distributions
+
+**For WEG - Ownership Shares:**
+```
+Distribution Methods:
+○ Equal shares (100% ÷ unit count)
+○ By size (proportional to m²)
+○ By room count
+○ Custom (manual entry)
+○ Import from document
+
+[Auto-validation: Sum must equal 100.000]
+```
+
+**For MV - Rent Ranges:**
+```
+Market Rent Suggestions:
+- Based on: [District] [Building Type] [Size]
+- Range: €[X] - €[Y] per m²
+- Auto-fill with median market rent
+- Adjust by: Floor (+/-%), Features (+/-%)
+```
+
+---
+
+## 4. Technical Architecture
+
+### 4.1 Tech Stack
+
+**Frontend:**
+- Next.js 14+ (App Router)
+- TypeScript (strict mode)
+- TailwindCSS for styling
+- React Hook Form + Zod for validation
+- Tanstack Table for grid views
+- Recharts for analytics
+
+**Backend:**
+- NestJS with modular architecture
+- Node.js 20+
+- Class-validator for DTOs
+- Swagger for API documentation
+
+**Database:**
+- PostgreSQL 15+
+- Prisma ORM
+- Redis for caching
+- Database migrations via Prisma
+
+**AI/ML (Optional):**
+- OpenAI API for document extraction
+- Tesseract.js for OCR fallback
+- pdf.js for PDF parsing
+
+### 4.2 Data Models
+
+**Core Entities:**
+```
+Property
+├── id: UUID
+├── type: ENUM (WEG, MV)
+├── name: string
+├── propertyNumber: string (unique)
+├── managerId: UUID (User)
+├── accountantId: UUID (User)
+├── status: ENUM (draft, active, archived)
+├── buildings: Building[]
+└── metadata: JSONB
+
+Building
+├── id: UUID
+├── propertyId: UUID
+├── address: Address
+├── floors: number
+├── buildingType: ENUM
+├── units: Unit[]
+└── constructionYear: number
+
+Unit
+├── id: UUID
+├── buildingId: UUID
+├── unitNumber: string
+├── floor: number
+├── type: ENUM (apartment, office, parking, garden)
+├── size: decimal
+├── rooms: number
+├── ownershipShare?: decimal (WEG only)
+├── currentRent?: decimal (MV only)
+└── features: JSONB
+```
+
+---
+
+## 5. User Experience Principles
+
+### 5.1 Progressive Disclosure
+- Start with minimal required fields
+- Reveal advanced options on demand
+- Save progress automatically
+
+### 5.2 Error Prevention
+- Real-time validation
+- Impossible states disabled
+- Clear constraints (e.g., "2-20 floors")
+
+### 5.3 Efficiency Patterns
+- **Keyboard-first** for power users
+- **Mobile-responsive** for on-site entry
+- **Bulk operations** for large properties
+- **Templates** from similar properties
+
+### 5.4 Smart Defaults
+- Learn from user's previous entries
+- District-based suggestions
+- Industry-standard ranges
+
+---
+
+## 6. Validation Rules
+
+### WEG-Specific
+- Ownership shares sum = 100.000
+- Each unit must have ownership share
+- Minimum 2 owners required
+
+### MV-Specific
+- Rent must be > 0 for occupied units
+- Vacancy status required
+- Lease dates logical (start < end)
+
+### Universal
+- Unit numbers unique within building
+- Floor number ≤ total floors
+- Size ranges: 15-500 m² (apartments)
+
+---
+
+## 7. Performance Requirements
+
+- **Page Load:** < 2 seconds
+- **Flow Step Navigation:** < 500ms
+- **Auto-save:** Every 30 seconds
+- **Document Processing:** < 30 seconds for 30-page PDF
+- **Bulk Operations:** Handle 100+ units without lag
+
+---
+
+## 8. Future Enhancements (Post-MVP)
+
+1. **Mobile App** for on-site property tours
+2. **Tenant Portal** integration
+3. **Maintenance Scheduling** module
+4. **Financial Reporting** dashboard
+5. **Document Management** system
+6. **API Integration** with popular property management tools
+7. **Batch Import** from Excel/CSV
+8. **Property Comparison** tools
+9. **Market Analysis** integration
+10. **3D Floor Plan** visualization
+
+---
+
+## 9. Success Criteria
+
+### Functional
+- ✅ Complete property creation in < 15 minutes (60 units)
+- ✅ Support both WEG and MV property types
+- ✅ Work without document upload
+- ✅ AI extraction when documents provided
+- ✅ Data validation prevents errors
+
+### Non-Functional
+- ✅ Responsive design (mobile → desktop)
+- ✅ Accessible (WCAG 2.1 AA)
+- ✅ Performs under load (100 concurrent users)
+- ✅ Secure (GDPR compliant, encrypted data)
+- ✅ Maintainable (>80% test coverage)
+
+---
+
+## 10. Risk Mitigation
+
+| Risk | Mitigation |
+|------|------------|
+| AI extraction inaccuracy | Manual override always available |
+| Large property complexity | Progressive save, resume later |
+| Missing document standards | Support multiple document formats |
+| User abandonment | Auto-save, email reminders |
+| Performance with many units | Pagination, virtual scrolling |
+
+---
+
+## 11. Implementation Phases
+
+### Phase 1: MVP
+- Basic dashboard
+- Manual property creation flow
+- WEG property support
+- Core validations
+
+### Phase 2: Enhancement
+- MV property support
+- Bulk entry tools
+- Pattern detection
+- Smart defaults
+
+### Phase 3: AI Integration 
+- Document upload
+- OCR/extraction
+- Auto-population
+- Verification UI
