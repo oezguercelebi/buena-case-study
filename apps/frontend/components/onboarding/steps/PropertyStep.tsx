@@ -19,7 +19,7 @@ const PropertyStep: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div 
-            className="relative p-8 cursor-pointer transition-all border rounded-lg hover:shadow-lg hover:border-blue-500/50 bg-white"
+            className="relative p-8 cursor-pointer transition-all border rounded-lg hover:shadow-lg hover:border-gray-400 bg-white"
             onClick={() => setSelectedPropertyType('WEG')}
           >
             <div className="flex flex-col items-center space-y-4">
@@ -43,7 +43,7 @@ const PropertyStep: React.FC = () => {
           </div>
 
           <div 
-            className="relative p-8 cursor-pointer transition-all border rounded-lg hover:shadow-lg hover:border-blue-500/50 bg-white"
+            className="relative p-8 cursor-pointer transition-all border rounded-lg hover:shadow-lg hover:border-gray-400 bg-white"
             onClick={() => setSelectedPropertyType('MV')}
           >
             <div className="flex flex-col items-center space-y-4">
@@ -83,7 +83,7 @@ const PropertyStep: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-medium flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-600" />
+              <Sparkles className="h-4 w-4 text-black" />
               AI Document Extraction
             </h3>
             <p className="text-sm text-gray-600 mt-1">
@@ -93,11 +93,11 @@ const PropertyStep: React.FC = () => {
         </div>
 
         {!uploadedFile ? (
-          <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-500 hover:bg-blue-50/50 transition-colors cursor-pointer"
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-500 hover:bg-gray-50 transition-colors cursor-pointer"
                onClick={() => document.getElementById('file-upload')?.click()}>
             <div className="flex flex-col items-center space-y-3">
-              <div className="p-3 rounded-full bg-blue-100">
-                <Upload className="h-6 w-6 text-blue-600" />
+              <div className="p-3 rounded-full bg-gray-100">
+                <Upload className="h-6 w-6 text-black" />
               </div>
               <div>
                 <p className="text-sm font-medium mb-1">Drop your document here or click to browse</p>
@@ -140,8 +140,8 @@ const PropertyStep: React.FC = () => {
                 </button>
               </div>
             </div>
-            <div className="p-3 bg-blue-100 rounded-md">
-              <p className="text-xs text-blue-700 flex items-center gap-2">
+            <div className="p-3 bg-gray-100 rounded-md">
+              <p className="text-xs text-gray-700 flex items-center gap-2">
                 <Sparkles className="h-3 w-3 animate-pulse" />
                 AI will extract and fill all property information automatically
               </p>
