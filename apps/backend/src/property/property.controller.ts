@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put } from '@nestjs/common';
 import { PropertyService } from './property.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
+import type { Property } from './interfaces/property.interface';
 
 @Controller('property')
 export class PropertyController {
@@ -11,8 +12,18 @@ export class PropertyController {
     return this.propertyService.findAll();
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.propertyService.findOne(id);
+  }
+
   @Post()
   create(@Body() createPropertyDto: CreatePropertyDto) {
     return this.propertyService.create(createPropertyDto);
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() updatePropertyDto: Partial<CreatePropertyDto>) {
+    return this.propertyService.update(id, updatePropertyDto);
   }
 }

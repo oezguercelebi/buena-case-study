@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/ui/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Plus, Building2, MapPin, Home } from "lucide-react"
+import { Plus, Building2, MapPin, Home, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { api } from "@/utils/api"
 
 type PropertyType = "WEG" | "MV"
 
@@ -20,41 +21,27 @@ interface Property {
   status: "draft" | "active" | "archived"
 }
 
-const mockProperties: Property[] = [
-  {
-    id: "1",
-    name: "Friedrichstraße 123 WEG",
-    type: "WEG",
-    propertyNumber: "WEG-2024-001",
-    unitCount: 24,
-    address: "Friedrichstraße 123, 10117 Berlin",
-    lastModified: "2024-01-15",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Potsdamer Platz 45",
-    type: "MV",
-    propertyNumber: "MV-2024-002",
-    unitCount: 60,
-    address: "Potsdamer Platz 45, 10785 Berlin",
-    lastModified: "2024-01-14",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Alexanderplatz 78 WEG",
-    type: "WEG",
-    propertyNumber: "WEG-2024-003",
-    unitCount: 36,
-    address: "Alexanderplatz 78, 10178 Berlin",
-    lastModified: "2024-01-10",
-    status: "draft",
-  },
-]
-
 export default function PropertiesPage() {
-  const [properties] = useState<Property[]>(mockProperties)
+  const [properties, setProperties] = useState<Property[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchProperties()
+  }, [])
+
+  const fetchProperties = async () => {
+    try {
+      setLoading(true)
+      const data = await api.get<Property[]>('/property')
+      setProperties(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      console.error('Error fetching properties:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <DashboardLayout>
@@ -74,8 +61,29 @@ export default function PropertiesPage() {
           </Link>
         </div>
 
-        <div className="grid gap-4">
-          {properties.map((property) => (
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {error && (
+          <Card className="p-6 bg-destructive/10 border-destructive/20">
+            <p className="text-destructive">{error}</p>
+            <Button 
+              onClick={fetchProperties} 
+              variant="outline" 
+              className="mt-4"
+              size="sm"
+            >
+              Try Again
+            </Button>
+          </Card>
+        )}
+
+        {!loading && !error && (
+          <div className="grid gap-4">
+            {properties.map((property) => (
             <Card key={property.id} className="p-6 hover:shadow-lg transition-shadow bg-card">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -133,10 +141,11 @@ export default function PropertiesPage() {
                 </div>
               </div>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {properties.length === 0 && (
+        {!loading && !error && properties.length === 0 && (
           <Card className="p-12 bg-card">
             <div className="text-center">
               <Home className="mx-auto h-12 w-12 text-muted-foreground" />
