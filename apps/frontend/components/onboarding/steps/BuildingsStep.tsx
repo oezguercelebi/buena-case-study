@@ -236,8 +236,8 @@ const BuildingsStep: React.FC = () => {
                   placeholder={selectedBuildingType === 'altbau' ? '5' : selectedBuildingType === 'hochhaus' ? '12' : '6'}
                   min="1"
                   max="50"
-                  value={formData.floors}
-                  onChange={(e) => setFormData({ ...formData, floors: parseInt(e.target.value) || 1 })}
+                  value={formData.floors || ''}
+                  onChange={(e) => setFormData({ ...formData, floors: parseInt(e.target.value) || 0 })}
                 />
                 <p className="text-xs text-muted-foreground">
                   {selectedBuildingType === 'altbau' && 'Typically 4-6 floors'}
@@ -258,8 +258,8 @@ const BuildingsStep: React.FC = () => {
                   placeholder={selectedBuildingType === 'altbau' ? '1900' : selectedBuildingType === 'neubau' ? '2020' : 'YYYY'}
                   min="1800"
                   max={new Date().getFullYear()}
-                  value={formData.constructionYear}
-                  onChange={(e) => setFormData({ ...formData, constructionYear: parseInt(e.target.value) || 2020 })}
+                  value={formData.constructionYear || ''}
+                  onChange={(e) => setFormData({ ...formData, constructionYear: parseInt(e.target.value) || 0 })}
                 />
                 <p className="text-xs text-muted-foreground">
                   {selectedBuildingType === 'altbau' && 'Pre-1945 construction'}
@@ -278,8 +278,8 @@ const BuildingsStep: React.FC = () => {
                 placeholder="e.g., 2-4 units"
                 min="1"
                 max="20"
-                value={formData.unitsPerFloor}
-                onChange={(e) => setFormData({ ...formData, unitsPerFloor: parseInt(e.target.value) || 1 })}
+                value={formData.unitsPerFloor || ''}
+                onChange={(e) => setFormData({ ...formData, unitsPerFloor: parseInt(e.target.value) || 0 })}
               />
               <p className="text-xs text-muted-foreground">
                 This helps us prepare the unit configuration in the next step
