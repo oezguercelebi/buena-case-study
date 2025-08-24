@@ -12,7 +12,11 @@
       "Bash(npm run dev:*)",
       "Bash(lsof:*)",
       "Bash(npm run build:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(pkill:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(grep:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
