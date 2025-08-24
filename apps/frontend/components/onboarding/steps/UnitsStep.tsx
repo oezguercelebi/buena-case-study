@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Building, Home, ChevronLeft, ChevronRight, X, Plus, Info } from 'lucide-react'
+import { Building, Home, ChevronLeft, ChevronRight, X, Plus, Info, Upload, Sparkles } from 'lucide-react'
+import { BulkImport } from '../units/BulkImport'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
@@ -46,6 +47,7 @@ const UnitsStep: React.FC = () => {
   })
 
   const units = selectedBuilding?.units || []
+  const [showBulkImport, setShowBulkImport] = useState(false)
 
   // Keyboard navigation for floors
   useEffect(() => {
@@ -167,6 +169,23 @@ const UnitsStep: React.FC = () => {
       b.id === selectedBuildingId ? updatedBuilding : b
     )
     updateData({ buildings: updatedBuildings })
+  }
+
+  const handleBulkImport = (importedUnits: OnboardingUnitData[]) => {
+    if (!selectedBuilding) return
+
+    // Merge imported units with existing units
+    const updatedBuilding = { 
+      ...selectedBuilding, 
+      units: [...units, ...importedUnits] 
+    }
+    
+    const updatedBuildings = buildings.map(b => 
+      b.id === selectedBuildingId ? updatedBuilding : b
+    )
+    
+    updateData({ buildings: updatedBuildings })
+    setShowBulkImport(false)
   }
 
   const addUnit = () => {
@@ -308,51 +327,84 @@ const UnitsStep: React.FC = () => {
 
       {/* Quick Generation Card */}
       {units.length === 0 && selectedBuilding && (
-        <Card className="p-6">
-          <h3 className="font-medium mb-4">Quick Unit Setup</h3>
-          <div className="space-y-4">
-            <div>
-              <Label>Units per floor</Label>
-              <Input
-                type="number"
-                min="1"
-                max="10"
-                value={patternConfig.unitsPerFloor}
-                onChange={(e) => setPatternConfig({
-                  ...patternConfig,
-                  unitsPerFloor: parseInt(e.target.value) || 4
-                })}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Total: {selectedBuilding.floors} floors × {patternConfig.unitsPerFloor} units = {selectedBuilding.floors * patternConfig.unitsPerFloor} units
-              </p>
-            </div>
-
-            {propertyType === 'MV' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Pattern Generation */}
+          <Card className="p-6">
+            <h3 className="font-medium mb-4 flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Quick Generation
+            </h3>
+            <div className="space-y-4">
               <div>
-                <Label>Base rent per m²</Label>
+                <Label>Units per floor</Label>
                 <Input
                   type="number"
-                  step="0.50"
-                  value={patternConfig.baseRent}
+                  min="1"
+                  max="10"
+                  value={patternConfig.unitsPerFloor}
                   onChange={(e) => setPatternConfig({
                     ...patternConfig,
-                    baseRent: parseFloat(e.target.value) || 12.50
+                    unitsPerFloor: parseInt(e.target.value) || 4
                   })}
                   className="mt-1"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Higher floors will have slightly higher rent (+2% per floor)
+                  Total: {selectedBuilding.floors} floors × {patternConfig.unitsPerFloor} units = {selectedBuilding.floors * patternConfig.unitsPerFloor} units
                 </p>
               </div>
-            )}
 
-            <Button onClick={generateUnits} className="w-full">
-              Generate {selectedBuilding.floors * patternConfig.unitsPerFloor} Units
-            </Button>
-          </div>
-        </Card>
+              {propertyType === 'MV' && (
+                <div>
+                  <Label>Base rent per m²</Label>
+                  <Input
+                    type="number"
+                    step="0.50"
+                    value={patternConfig.baseRent}
+                    onChange={(e) => setPatternConfig({
+                      ...patternConfig,
+                      baseRent: parseFloat(e.target.value) || 12.50
+                    })}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Higher floors will have slightly higher rent (+2% per floor)
+                  </p>
+                </div>
+              )}
+
+              <Button onClick={generateUnits} className="w-full">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate {selectedBuilding.floors * patternConfig.unitsPerFloor} Units
+              </Button>
+            </div>
+          </Card>
+
+          {/* CSV Import Dropzone */}
+          <Card className="p-6">
+            <h3 className="font-medium mb-4 flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Import from File
+            </h3>
+            <div 
+              className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => setShowBulkImport(true)}
+            >
+              <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="font-medium text-sm mb-1">Click to import CSV</p>
+              <p className="text-xs text-muted-foreground">
+                Upload units from spreadsheet with custom field mapping
+              </p>
+            </div>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-medium mb-1">Supported formats:</p>
+              <ul className="space-y-0.5 ml-4">
+                <li>• CSV with any separator</li>
+                <li>• Custom column mapping</li>
+                <li>• Automatic field detection</li>
+              </ul>
+            </div>
+          </Card>
+        </div>
       )}
 
       {/* Units Grid Table View */}
@@ -360,10 +412,19 @@ const UnitsStep: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-medium">Unit Configuration</h3>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowBulkImport(true)}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
                 const updatedBuilding = { ...selectedBuilding, units: [] }
                 const updatedBuildings = buildings.map(b => 
                   b.id === selectedBuildingId ? updatedBuilding : b
@@ -374,6 +435,7 @@ const UnitsStep: React.FC = () => {
             >
               Regenerate All
             </Button>
+            </div>
           </div>
 
           {/* Grid Table */}
@@ -586,6 +648,16 @@ const UnitsStep: React.FC = () => {
             </div>
           </Card>
         </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showBulkImport && selectedBuilding && (
+        <BulkImport
+          buildingId={selectedBuildingId}
+          propertyType={propertyType as 'WEG' | 'MV'}
+          onImport={handleBulkImport}
+          onClose={() => setShowBulkImport(false)}
+        />
       )}
     </div>
   )
