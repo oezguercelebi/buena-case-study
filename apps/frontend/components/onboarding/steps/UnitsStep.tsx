@@ -14,7 +14,7 @@ type UnitEntryMode = 'pattern' | 'bulk' | 'grid'
 const UnitsStep: React.FC = () => {
   const { state, updateData } = useOnboarding()
   const buildings = state.data.buildings || []
-  const propertyType = state.data.propertyType || 'WEG'
+  const propertyType = state.data.type || 'WEG'
   
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildings[0]?.id || '')
   const [unitEntryMode, setUnitEntryMode] = useState<UnitEntryMode>('pattern')
@@ -31,18 +31,19 @@ const UnitsStep: React.FC = () => {
   })
 
   // Grid mode state
-  const [gridUnits, setGridUnits] = useState<Unit[]>([])
+  const [gridUnits, setGridUnits] = useState<OnboardingUnitData[]>([])
 
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
+  const units = selectedBuilding?.units || []
 
   const handleApplyPattern = () => {
     if (!selectedBuilding) return
 
-    const generatedUnits: Unit[] = []
+    const generatedUnits: OnboardingUnitData[] = []
     
     for (let floor = 1; floor <= selectedBuilding.floors; floor++) {
       for (let unitNum = 1; unitNum <= patternConfig.unitsPerFloor; unitNum++) {
-        const unit: Unit = {
+        const unit: OnboardingUnitData = {
           id: `${selectedBuildingId}-${floor}-${unitNum}`,
           buildingId: selectedBuildingId,
           unitNumber: `${floor}.${unitNum.toString().padStart(2, '0')}`,
@@ -70,23 +71,25 @@ const UnitsStep: React.FC = () => {
       }
     }
 
-    setUnits(generatedUnits)
-    if (onUnitsChange) {
-      onUnitsChange(generatedUnits)
-    }
+    // Update the building with new units
+    const updatedBuilding = { ...selectedBuilding, units: generatedUnits }
+    const updatedBuildings = buildings.map(b => 
+      b.id === selectedBuildingId ? updatedBuilding : b
+    )
+    updateData({ buildings: updatedBuildings })
   }
 
   const handleAddBulkUnits = (type: string, rooms: number, size: number, quantity: number) => {
     if (!selectedBuilding) return
 
-    const newUnits: Unit[] = []
+    const newUnits: OnboardingUnitData[] = []
     const startIndex = units.length
 
     for (let i = 0; i < quantity; i++) {
       const floor = Math.floor(startIndex + i / 4) + 1
       const unitNum = (startIndex + i) % 4 + 1
       
-      const unit: Unit = {
+      const unit: OnboardingUnitData = {
         id: `${selectedBuildingId}-bulk-${Date.now()}-${i}`,
         buildingId: selectedBuildingId,
         unitNumber: `${floor}.${unitNum.toString().padStart(2, '0')}`,
@@ -106,10 +109,12 @@ const UnitsStep: React.FC = () => {
     }
 
     const updatedUnits = [...units, ...newUnits]
-    setUnits(updatedUnits)
-    if (onUnitsChange) {
-      onUnitsChange(updatedUnits)
-    }
+    // Update the building with new units
+    const updatedBuilding = { ...selectedBuilding, units: updatedUnits }
+    const updatedBuildings = buildings.map(b => 
+      b.id === selectedBuildingId ? updatedBuilding : b
+    )
+    updateData({ buildings: updatedBuildings })
   }
 
   const unitTemplates = [
@@ -593,7 +598,10 @@ const UnitsStep: React.FC = () => {
               <div className="flex items-center justify-between p-3 bg-muted rounded-md">
                 <p className="text-sm">Total Share Distribution:</p>
                 <p className="font-mono font-medium">
-                  {building.units.reduce((sum, u) => sum + (u.ownershipShare || 0), 0).toFixed(3)}%
+                  {buildings
+                    .flatMap(b => b.units || [])
+                    .reduce((sum, u) => sum + (u.ownershipShare || 0), 0)
+                    .toFixed(3)}%
                 </p>
               </div>
             </div>
