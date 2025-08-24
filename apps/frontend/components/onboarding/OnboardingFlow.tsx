@@ -38,18 +38,7 @@ const OnboardingFlowContent: React.FC = () => {
   const router = useRouter()
   const { state, setCurrentStep, validateStep, canNavigateToStep, saveToAPI, resetOnboarding } = useOnboarding()
   const { forceSave } = useAutosave({ enabled: true })
-  const [showResumeBanner, setShowResumeBanner] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
-
-  // Check for existing property data on mount
-  useEffect(() => {
-    const hasExistingData = state.data.propertyName || state.data.propertyType
-    const isReturningUser = state.currentStep > 0 || hasExistingData
-    
-    if (isReturningUser) {
-      setShowResumeBanner(true)
-    }
-  }, [state.data.propertyName, state.data.propertyType, state.currentStep])
 
   const handleNext = async () => {
     // Validate current step before proceeding
@@ -102,10 +91,6 @@ const OnboardingFlowContent: React.FC = () => {
     }
   }
 
-  const handleDismissResumeBanner = () => {
-    setShowResumeBanner(false)
-  }
-
   const renderStepContent = () => {
     const stepId = onboardingSteps[state.currentStep].id
     switch (stepId) {
@@ -122,31 +107,6 @@ const OnboardingFlowContent: React.FC = () => {
 
   return (
     <div>
-      {/* Resume Banner */}
-      {showResumeBanner && (
-        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-blue-600" />
-              <span className="text-sm text-blue-800">
-                You have an existing property from {
-                  state.data.lastModified 
-                    ? new Date(state.data.lastModified).toLocaleDateString() 
-                    : 'a previous session'
-                }. 
-                Continue where you left off?
-              </span>
-            </div>
-            <button
-              onClick={handleDismissResumeBanner}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
         <div className="bg-red-50 border-b border-red-200 px-4 py-3">
