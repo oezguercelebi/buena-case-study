@@ -315,7 +315,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     if (state.hasUnsavedChanges && state.data.name && state.data.type) {
       const timeoutId = setTimeout(async () => {
         try {
-          await saveToAPI()
+          await saveToAPI(false) // Explicitly pass false to never auto-complete
           console.log('Auto-saved property to API')
         } catch (error) {
           console.error('Auto-save failed:', error)

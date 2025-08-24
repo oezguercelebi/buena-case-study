@@ -43,7 +43,7 @@ export function useAutosave(options: UseAutosaveOptions = {}) {
     }
 
     try {
-      await saveToAPI()
+      await saveToAPI(false) // Explicitly pass false to never auto-complete
       lastSyncRef.current = new Date()
     } catch (error) {
       console.error('Failed to sync to API:', error)

@@ -171,16 +171,7 @@ export default function PropertiesPage() {
                 </div>
                 
                 <div className="flex gap-2">
-                  {property.completed ? (
-                    <>
-                      <Button variant="outline" size="sm">
-                        View
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : (
+                  {!property.completed && (
                     <Button 
                       variant="outline" 
                       size="sm"
