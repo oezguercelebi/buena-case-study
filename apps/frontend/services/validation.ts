@@ -20,7 +20,7 @@ export class PropertyValidationService {
   static validatePropertyStep(data: OnboardingPropertyData): StepValidation {
     const errors: FieldError[] = [];
     let completedFields = 0;
-    const totalFields = 6; // name, type, address, managementCompany, propertyManager, accountant
+    const totalFields = 5; // name, type, propertyNumber, address, accountant (managementCompany, propertyManager are optional)
 
     // Property Name
     if (!data.name?.trim()) {
@@ -38,6 +38,13 @@ export class PropertyValidationService {
       completedFields++;
     }
 
+    // Property Number
+    if (!data.propertyNumber?.trim()) {
+      errors.push({ field: 'propertyNumber', message: 'Property number is required' });
+    } else {
+      completedFields++;
+    }
+
     // Address
     if (!data.address?.trim()) {
       errors.push({ field: 'address', message: 'Address is required' });
@@ -45,22 +52,20 @@ export class PropertyValidationService {
       completedFields++;
     }
 
-    // Management Company
-    if (!data.managementCompany?.trim()) {
-      errors.push({ field: 'managementCompany', message: 'Management company is required' });
+    // Accountant (required)
+    if (!data.accountant?.trim()) {
+      errors.push({ field: 'accountant', message: 'Accountant is required' });
     } else {
       completedFields++;
     }
 
-    // Property Manager
-    if (!data.propertyManager?.trim()) {
-      errors.push({ field: 'propertyManager', message: 'Property manager is required' });
-    } else {
+    // Management Company (optional but counts toward completion if filled)
+    if (data.managementCompany?.trim()) {
       completedFields++;
     }
 
-    // Accountant (optional but counts toward completion)
-    if (data.accountant?.trim()) {
+    // Property Manager (optional but counts toward completion if filled)
+    if (data.propertyManager?.trim()) {
       completedFields++;
     }
 

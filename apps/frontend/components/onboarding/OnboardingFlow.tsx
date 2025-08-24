@@ -198,7 +198,7 @@ const OnboardingFlowContent: React.FC = () => {
     const stepId = onboardingSteps[state.currentStep].id
     switch (stepId) {
       case 'property':
-        return <PropertyStep />
+        return <PropertyStep validationErrors={validationErrors} />
       case 'buildings':
         return <BuildingsStep />
       case 'units':
@@ -218,27 +218,6 @@ const OnboardingFlowContent: React.FC = () => {
         onCreateNew={handleCreateNew}
         onContinueProperty={handleContinueProperty}
       />
-
-      {/* Validation Errors */}
-      {validationErrors.length > 0 && (
-        <div className="bg-red-50 border-b border-red-200 px-4 py-3">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="text-sm font-medium text-red-800 mb-1">
-                  Please fix the following errors:
-                </h4>
-                <ul className="text-sm text-red-700 space-y-1">
-                  {validationErrors.map((error, index) => (
-                    <li key={index}>• {error.message}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <OnboardingLayout
         currentStep={state.currentStep}

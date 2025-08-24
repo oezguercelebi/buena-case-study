@@ -48,6 +48,9 @@ const initialState: OnboardingState = {
     aiExtractionEnabled: true,
     currentStep: 0,
     completedSteps: [],
+    managementCompany: 'Buena Property Management GmbH',
+    propertyManager: 'Max Mustermann',
+    accountant: 'jane-smith',
   },
   currentStep: 0,
   isLoading: false,
@@ -195,7 +198,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         step3Complete: state.currentStep >= 2,
       }
 
-      let response;
+      let response: any;
       if (state.propertyId) {
         // Update existing property using autosave endpoint
         response = await api.patch(`/property/${state.propertyId}/autosave`, propertyData)
@@ -203,8 +206,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         // Create new property
         response = await api.post('/property', propertyData)
         // Store the new property ID
-        dispatch({ type: 'SET_PROPERTY_ID', payload: response.id })
-        localStorage.setItem(STORAGE_KEYS.PROPERTY_ID, response.id)
+        if (response && response.id) {
+          dispatch({ type: 'SET_PROPERTY_ID', payload: response.id })
+          localStorage.setItem(STORAGE_KEYS.PROPERTY_ID, response.id)
+        }
       }
       
       dispatch({ type: 'SET_LAST_SAVED', payload: new Date() })

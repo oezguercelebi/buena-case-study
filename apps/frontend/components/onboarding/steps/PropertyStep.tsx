@@ -4,8 +4,13 @@ import React, { useState, useEffect } from 'react'
 import { Building, Home as HomeIcon, Upload, Sparkles, FileCheck } from 'lucide-react'
 import { useOnboarding } from '../../../contexts/OnboardingContext'
 import { PropertyType } from '../../../types/property'
+import type { FieldError } from '../../../services/validation'
 
-const PropertyStep: React.FC = () => {
+interface PropertyStepProps {
+  validationErrors?: FieldError[]
+}
+
+const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) => {
   const { state, updateData } = useOnboarding()
   
   // Local state for UI interaction
@@ -48,6 +53,12 @@ const PropertyStep: React.FC = () => {
     updateData({ [field]: value })
   }
 
+  // Helper to get error for a specific field
+  const getFieldError = (fieldName: string): string | undefined => {
+    const error = validationErrors.find(err => err.field === fieldName)
+    return error?.message
+  }
+
   if (!selectedPropertyType) {
     return (
       <div className="space-y-6">
@@ -56,6 +67,9 @@ const PropertyStep: React.FC = () => {
           <p className="text-gray-600">
             Choose the type of property you want to onboard
           </p>
+          {getFieldError('type') && (
+            <p className="text-sm text-red-500 mt-2">{getFieldError('type')}</p>
+          )}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -207,46 +221,67 @@ const PropertyStep: React.FC = () => {
             <label className="text-sm font-medium">Property Name *</label>
             <input
               type="text"
-              className="w-full h-9 px-3 rounded-md border bg-white"
+              className={`w-full h-9 px-3 rounded-md border bg-white ${getFieldError('name') ? 'border-red-500' : ''}`}
               placeholder={selectedPropertyType === 'WEG' ? 'e.g., Hauptstraße 123 WEG' : 'e.g., Hauptstraße 123'}
               value={state.data.name || ''}
               onChange={(e) => handleFieldChange('name', e.target.value)}
             />
+            {getFieldError('name') && (
+              <p className="text-xs text-red-500">{getFieldError('name')}</p>
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Property Number *</label>
             <input
               type="text"
-              className="w-full h-9 px-3 rounded-md border bg-white"
+              className={`w-full h-9 px-3 rounded-md border bg-white ${getFieldError('propertyNumber') ? 'border-red-500' : ''}`}
               placeholder="Unique identifier"
               value={state.data.propertyNumber || ''}
               onChange={(e) => handleFieldChange('propertyNumber', e.target.value)}
             />
+            {getFieldError('propertyNumber') && (
+              <p className="text-xs text-red-500">{getFieldError('propertyNumber')}</p>
+            )}
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-medium">Address *</label>
+            <input
+              type="text"
+              className={`w-full h-9 px-3 rounded-md border bg-white ${getFieldError('address') ? 'border-red-500' : ''}`}
+              placeholder="Street address, postal code, city"
+              value={state.data.address || ''}
+              onChange={(e) => handleFieldChange('address', e.target.value)}
+            />
+            {getFieldError('address') && (
+              <p className="text-xs text-red-500">{getFieldError('address')}</p>
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Management Company</label>
             <input
               type="text"
-              className="w-full h-9 px-3 rounded-md border bg-white"
-              placeholder="Pre-filled from profile"
+              className="w-full h-9 px-3 rounded-md border bg-gray-50"
+              placeholder="Company name"
               value={state.data.managementCompany || ''}
               onChange={(e) => handleFieldChange('managementCompany', e.target.value)}
             />
+            <p className="text-xs text-gray-500">Pre-filled from company profile</p>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Property Manager</label>
             <input
               type="text"
-              className="w-full h-9 px-3 rounded-md border bg-white"
-              placeholder="Pre-filled from user"
+              className="w-full h-9 px-3 rounded-md border bg-gray-50"
+              placeholder="Manager name"
               value={state.data.propertyManager || ''}
               onChange={(e) => handleFieldChange('propertyManager', e.target.value)}
             />
+            <p className="text-xs text-gray-500">Pre-filled from current user</p>
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium">Accountant</label>
+            <label className="text-sm font-medium">Accountant *</label>
             <select 
-              className="w-full h-9 px-3 rounded-md border bg-white"
+              className={`w-full h-9 px-3 rounded-md border bg-gray-50 ${getFieldError('accountant') ? 'border-red-500' : ''}`}
               value={state.data.accountant || ''}
               onChange={(e) => handleFieldChange('accountant', e.target.value)}
             >
@@ -254,6 +289,10 @@ const PropertyStep: React.FC = () => {
               <option value="john-doe">John Doe - Accounting</option>
               <option value="jane-smith">Jane Smith - Finance</option>
             </select>
+            {getFieldError('accountant') && (
+              <p className="text-xs text-red-500">{getFieldError('accountant')}</p>
+            )}
+            <p className="text-xs text-gray-500">Pre-selected based on property assignment</p>
           </div>
         </div>
       </div>
