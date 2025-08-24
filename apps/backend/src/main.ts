@@ -49,7 +49,7 @@ async function bootstrap() {
     .addTag('statistics', 'Property statistics and analytics')
     .setContact('Buena Property Management', 'https://buena.example.com', 'support@buena.example.com')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
-    .addServer('http://localhost:3000', 'Development server')
+    .addServer('http://localhost:3001', 'Development server')
     .build();
     
   const document = SwaggerModule.createDocument(app, config);
@@ -65,7 +65,7 @@ async function bootstrap() {
     customSiteTitle: 'Buena Property Management API Documentation',
   });
   
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.PORT ?? 3001;
   await app.listen(port);
   
   logger.log(`🚀 Application is running on: http://localhost:${port}`);
