@@ -229,6 +229,7 @@ const OnboardingFlowContent: React.FC = () => {
         isFirstStep={state.currentStep === 0}
         isLastStep={state.currentStep === onboardingSteps.length - 1}
         autoSaved={!state.hasUnsavedChanges && state.lastSaved !== null}
+        isSaving={state.isSaving}
         lastSavedTime={state.lastSaved}
         canNavigateToStep={canNavigateToStep}
         validationErrors={validationErrors}
