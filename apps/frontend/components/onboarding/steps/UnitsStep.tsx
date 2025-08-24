@@ -185,9 +185,34 @@ const UnitsStep: React.FC = memo(() => {
     if (!selectedBuilding) return
 
     // Merge imported units with existing units
+    const allUnits = [...units, ...importedUnits]
+    
+    // Auto-adjust building floors based on imported units
+    const floors = allUnits.map(u => u.floor).filter(f => f !== undefined) as number[]
+    if (floors.length === 0) {
+      // No valid floors found, keep existing configuration
+      const updatedBuilding = { 
+        ...selectedBuilding, 
+        units: allUnits
+      }
+      const updatedBuildings = buildings.map(b => 
+        b.id === selectedBuildingId ? updatedBuilding : b
+      )
+      updateData({ buildings: updatedBuildings })
+      setShowBulkImport(false)
+      return
+    }
+    
+    const minFloor = Math.min(...floors)
+    const maxFloor = Math.max(...floors)
+    const numberOfFloors = maxFloor - minFloor + 1
+    
+    // Update building with new units and adjusted floor configuration
     const updatedBuilding = { 
       ...selectedBuilding, 
-      units: [...units, ...importedUnits] 
+      units: allUnits,
+      startingFloor: minFloor,
+      floors: numberOfFloors
     }
     
     const updatedBuildings = buildings.map(b => 
@@ -196,7 +221,12 @@ const UnitsStep: React.FC = memo(() => {
     
     updateData({ buildings: updatedBuildings })
     setShowBulkImport(false)
-  }, [selectedBuilding, selectedBuildingId, buildings, units, updateData])
+    
+    // Adjust current floor view if it's out of range
+    if (currentFloor < minFloor || currentFloor > maxFloor) {
+      setCurrentFloor(minFloor)
+    }
+  }, [selectedBuilding, selectedBuildingId, buildings, units, updateData, currentFloor])
 
   const addUnit = useCallback(() => {
     if (!selectedBuilding) return
