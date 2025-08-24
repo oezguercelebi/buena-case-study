@@ -6,6 +6,7 @@ import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Label } from '../../ui/label'
 import { OnboardingUnitData } from '../../../types/property'
+import { TypeMappingModal } from './TypeMappingModal'
 
 interface BulkImportProps {
   buildingId: string
@@ -39,6 +40,9 @@ export const BulkImport: React.FC<BulkImportProps> = ({
   const [headers, setHeaders] = useState<string[]>([])
   const [fieldMapping, setFieldMapping] = useState<{ [columnIndex: number]: string }>({})
   const [previewData, setPreviewData] = useState<OnboardingUnitData[]>([])
+  const [showTypeMapping, setShowTypeMapping] = useState(false)
+  const [typeColumnIndex, setTypeColumnIndex] = useState<number | null>(null)
+  const [typeValueMapping, setTypeValueMapping] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,6 +112,33 @@ export const BulkImport: React.FC<BulkImportProps> = ({
       ...prev,
       [columnIndex]: field === 'skip' ? '' : field
     }))
+    
+    // If type field is selected, show the type mapping modal
+    if (field === 'type' && csvData.length > 0) {
+      // Get unique values from this column
+      const uniqueValues = [...new Set(csvData.map(row => String(row[columnIndex] || '')))]
+      setTypeColumnIndex(columnIndex)
+      
+      // Only show modal if there are non-standard values
+      const validTypes = ['apartment', 'office', 'parking', 'storage', 'commercial']
+      const hasInvalidTypes = uniqueValues.some(v => !validTypes.includes(v.toLowerCase()))
+      
+      if (hasInvalidTypes || uniqueValues.length > 0) {
+        setShowTypeMapping(true)
+      }
+    }
+  }
+  
+  const getUniqueTypeValues = (): string[] => {
+    if (typeColumnIndex === null || csvData.length === 0) return []
+    return [...new Set(csvData.map(row => String(row[typeColumnIndex] || '')))]
+  }
+  
+  const handleTypeMapping = (mapping: Record<string, string>) => {
+    setTypeValueMapping(mapping)
+    setShowTypeMapping(false)
+    // Trigger preview update
+    setTimeout(() => updatePreview(), 100)
   }
 
   const generateUnitsFromCSV = (): OnboardingUnitData[] => {
@@ -124,7 +155,11 @@ export const BulkImport: React.FC<BulkImportProps> = ({
           const value = row[parseInt(colIndex)]
           const fieldConfig = availableUnitFields.find(f => f.id === field)
           
-          if (fieldConfig?.type === 'number') {
+          if (field === 'type' && typeValueMapping) {
+            // Apply type mapping if available
+            const originalValue = String(value)
+            unit.type = (typeValueMapping[originalValue] || 'apartment') as any
+          } else if (fieldConfig?.type === 'number') {
             unit[field as keyof OnboardingUnitData] = typeof value === 'number' ? value : parseFloat(value as string) || 0
           } else {
             // Ensure string values are converted to strings
@@ -306,6 +341,14 @@ export const BulkImport: React.FC<BulkImportProps> = ({
           </Button>
         </div>
       </Card>
+      
+      {/* Type Mapping Modal */}
+      <TypeMappingModal
+        open={showTypeMapping}
+        uniqueValues={getUniqueTypeValues()}
+        onApplyMapping={handleTypeMapping}
+        onCancel={() => setShowTypeMapping(false)}
+      />
     </div>
   )
 }

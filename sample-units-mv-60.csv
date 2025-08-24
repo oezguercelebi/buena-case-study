@@ -1,4 +1,4 @@
-Código;Piso;Habitaciones;Superficie;Alquiler
+Kennung;Ebene;Zimmerzahl;Quadratmeter;Monatsmiete
 S01;-1;0;12;150
 S02;-1;0;10;120
 S03;-1;0;15;180
