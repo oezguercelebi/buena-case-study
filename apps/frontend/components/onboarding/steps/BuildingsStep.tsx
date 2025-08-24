@@ -25,13 +25,12 @@ const BuildingsStep: React.FC = () => {
     postalCode: '',
     city: '',
     floors: 6,
-    unitsPerFloor: 4,
     constructionYear: 2020
   })
 
   const handleSaveBuilding = () => {
     const newBuilding: OnboardingBuildingData = {
-      id: editingBuilding?.id || Date.now().toString(),
+      id: editingBuilding?.id || `building-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       streetName: formData.streetName,
       houseNumber: formData.houseNumber,
       postalCode: formData.postalCode,
@@ -39,7 +38,6 @@ const BuildingsStep: React.FC = () => {
       address: `${formData.streetName} ${formData.houseNumber}, ${formData.postalCode} ${formData.city}`,
       buildingType: selectedBuildingType || 'neubau',
       floors: formData.floors,
-      unitsPerFloor: formData.unitsPerFloor,
       constructionYear: formData.constructionYear,
       units: editingBuilding?.units || []
     }
@@ -65,7 +63,6 @@ const BuildingsStep: React.FC = () => {
       postalCode: '',
       city: '',
       floors: 6,
-      unitsPerFloor: 4,
       constructionYear: 2020
     })
   }
@@ -98,7 +95,6 @@ const BuildingsStep: React.FC = () => {
       postalCode,
       city,
       floors: building.floors || 6,
-      unitsPerFloor: building.unitsPerFloor || 4,
       constructionYear: building.constructionYear || 2020
     })
     setSelectedBuildingType(building.buildingType || 'neubau')
@@ -110,11 +106,11 @@ const BuildingsStep: React.FC = () => {
     updateData({ buildings: updatedBuildings })
   }
 
-  const buildingTypes: { id: BuildingCategory; label: string; desc: string; suggestedFloors: number; suggestedUnitsPerFloor: number; suggestedYear: number }[] = [
-    { id: 'altbau', label: 'Altbau', desc: 'Pre-war, ~5 floors', suggestedFloors: 5, suggestedUnitsPerFloor: 2, suggestedYear: 1900 },
-    { id: 'neubau', label: 'Neubau', desc: 'Modern, 4-8 floors', suggestedFloors: 6, suggestedUnitsPerFloor: 4, suggestedYear: 2020 },
-    { id: 'hochhaus', label: 'Hochhaus', desc: 'High-rise, 9+ floors', suggestedFloors: 12, suggestedUnitsPerFloor: 6, suggestedYear: 1975 },
-    { id: 'mixed', label: 'Mixed-use', desc: 'Commercial + Residential', suggestedFloors: 6, suggestedUnitsPerFloor: 3, suggestedYear: 2010 }
+  const buildingTypes: { id: BuildingCategory; label: string; desc: string; suggestedFloors: number; suggestedYear: number }[] = [
+    { id: 'altbau', label: 'Altbau', desc: 'Pre-war, ~5 floors', suggestedFloors: 5, suggestedYear: 1900 },
+    { id: 'neubau', label: 'Neubau', desc: 'Modern, 4-8 floors', suggestedFloors: 6, suggestedYear: 2020 },
+    { id: 'hochhaus', label: 'Hochhaus', desc: 'High-rise, 9+ floors', suggestedFloors: 12, suggestedYear: 1975 },
+    { id: 'mixed', label: 'Mixed-use', desc: 'Commercial + Residential', suggestedFloors: 6, suggestedYear: 2010 }
   ]
 
   // Auto-update form fields when building type is selected
@@ -125,7 +121,6 @@ const BuildingsStep: React.FC = () => {
         setFormData(prev => ({
           ...prev,
           floors: selectedType.suggestedFloors,
-          unitsPerFloor: selectedType.suggestedUnitsPerFloor,
           constructionYear: selectedType.suggestedYear
         }))
       }
@@ -291,21 +286,6 @@ const BuildingsStep: React.FC = () => {
               </div>
             </div>
 
-            {/* Units per Floor Estimate */}
-            <div className="space-y-2">
-              <Label>Estimated Units per Floor</Label>
-              <Input
-                type="number"
-                placeholder="e.g., 2-4 units"
-                min="1"
-                max="20"
-                value={formData.unitsPerFloor || ''}
-                onChange={(e) => setFormData({ ...formData, unitsPerFloor: parseInt(e.target.value) || 0 })}
-              />
-              <p className="text-xs text-muted-foreground">
-                This helps us prepare the unit configuration in the next step
-              </p>
-            </div>
           </div>
 
           {/* Save Building Button */}
@@ -323,7 +303,9 @@ const BuildingsStep: React.FC = () => {
       {/* Display Added Buildings */}
       {buildings.length > 0 && (
         <div className="space-y-3">
-          {buildings.map((building) => (
+          {buildings
+            .filter(building => !editingBuilding || building.id !== editingBuilding.id)
+            .map((building) => (
             <Card key={building.id} className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -337,7 +319,7 @@ const BuildingsStep: React.FC = () => {
                         building.buildingType === 'altbau' ? 'Altbau' :
                         building.buildingType === 'neubau' ? 'Neubau' :
                         building.buildingType === 'hochhaus' ? 'Hochhaus' : 'Mixed-use'
-                      } • {building.floors} floors • ~{building.floors * building.unitsPerFloor} units
+                      } • {building.floors} floors
                     </p>
                   </div>
                 </div>
@@ -364,7 +346,7 @@ const BuildingsStep: React.FC = () => {
       )}
 
       {/* Empty State */}
-      {buildings.length === 0 && !showBuildingForm && (
+      {buildings.length === 0 && !showBuildingForm && !editingBuilding && (
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
           <Building className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-4 text-lg font-medium text-gray-900">No buildings added</h3>

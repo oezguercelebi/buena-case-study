@@ -38,7 +38,6 @@ export interface OnboardingBuildingData {
   city?: string
   buildingType?: BuildingType
   floors?: number
-  unitsPerFloor?: number
   constructionYear?: number
   units?: OnboardingUnitData[]
   totalArea?: number
@@ -98,7 +97,6 @@ export interface Building {
   city: string
   buildingType: BuildingType
   floors: number
-  unitsPerFloor: number
   constructionYear?: number
   units: Unit[]
   totalArea?: number

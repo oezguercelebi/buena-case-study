@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Building, Home, ChevronLeft, ChevronRight, X, Plus } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Building, Home, ChevronLeft, ChevronRight, X, Plus, Info } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
@@ -25,6 +25,30 @@ const UnitsStep: React.FC = () => {
 
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
   const units = selectedBuilding?.units || []
+
+  // Keyboard navigation for floors
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!selectedBuilding) return
+      
+      // Arrow keys for floor navigation when not in an input field
+      const activeElement = document.activeElement
+      const isInputActive = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'SELECT'
+      
+      if (!isInputActive) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+          e.preventDefault()
+          setCurrentFloor(prev => Math.max(1, prev - 1))
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+          e.preventDefault()
+          setCurrentFloor(prev => Math.min(selectedBuilding.floors, prev + 1))
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [selectedBuilding])
 
   const generateUnits = () => {
     if (!selectedBuilding) return
@@ -157,38 +181,62 @@ const UnitsStep: React.FC = () => {
         </p>
       </div>
 
-      {/* Building Selector (if multiple buildings) */}
+      {/* Building Tabs */}
       {buildings.length > 1 && (
-        <div className="flex gap-2 p-1 bg-muted rounded-lg">
-          {buildings.map((building) => (
-            <button
-              key={building.id}
-              className={`flex-1 px-4 py-2 rounded text-sm font-medium transition-all cursor-pointer ${
-                selectedBuildingId === building.id 
-                  ? 'bg-background shadow-sm' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-              onClick={() => {
-                setSelectedBuildingId(building.id)
-                setCurrentFloor(1)
-              }}
-            >
-              <Building className="inline h-3 w-3 mr-2" />
-              {building.streetName} {building.houseNumber}
-            </button>
-          ))}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <div className="flex gap-1">
+              {buildings.map((building) => {
+                const isActive = selectedBuildingId === building.id
+                const unitCount = building.units?.length || 0
+                
+                return (
+                  <button
+                    key={building.id}
+                    className={`relative px-4 py-3 text-sm font-medium transition-all cursor-pointer ${
+                      isActive 
+                        ? 'text-foreground' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => {
+                      setSelectedBuildingId(building.id)
+                      setCurrentFloor(1)
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Building className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
+                      <span>{building.streetName} {building.houseNumber}</span>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                        isActive 
+                          ? unitCount > 0 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {unitCount} {unitCount === 1 ? 'unit' : 'units'}
+                      </span>
+                    </div>
+                    {isActive && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Building Info */}
-      {selectedBuilding && (
-        <Card className="p-4 bg-muted/30">
+      {/* Building Info - Only show for single building */}
+      {selectedBuilding && buildings.length === 1 && (
+        <Card className="p-4 bg-muted/20 border-muted">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">{selectedBuilding.streetName} {selectedBuilding.houseNumber}</p>
-              <p className="text-sm text-muted-foreground">
-                {selectedBuilding.floors} floors • {selectedBuilding.buildingType}
-              </p>
+            <div className="flex items-center gap-3">
+              <Building className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">{selectedBuilding.streetName} {selectedBuilding.houseNumber}</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedBuilding.floors} floors • {selectedBuilding.buildingType}
+                </p>
+              </div>
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold">{units.length}</p>
@@ -281,6 +329,7 @@ const UnitsStep: React.FC = () => {
           {/* Grid Table */}
           <Card className="p-6">
             <div className="space-y-4">
+
               {/* Floor Navigation */}
               <div className="flex items-center justify-between mb-4">
                 <Button
@@ -312,20 +361,28 @@ const UnitsStep: React.FC = () => {
               </div>
 
               {/* Floor selector pills */}
-              <div className="flex gap-1 mb-6 overflow-x-auto pb-2">
-                {Array.from({ length: selectedBuilding.floors }, (_, i) => i + 1).map(floor => (
-                  <button
-                    key={floor}
-                    onClick={() => setCurrentFloor(floor)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-all cursor-pointer ${
-                      currentFloor === floor
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted hover:bg-muted/80'
-                    }`}
-                  >
-                    {floor}
-                  </button>
-                ))}
+              <div className="space-y-3 mb-6">
+                <div className="flex gap-1 overflow-x-auto pb-2">
+                  {Array.from({ length: selectedBuilding.floors }, (_, i) => i + 1).map(floor => (
+                    <button
+                      key={floor}
+                      onClick={() => setCurrentFloor(floor)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-all cursor-pointer ${
+                        currentFloor === floor
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
+                    >
+                      {floor}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Subtle keyboard tip */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Info className="h-3 w-3" />
+                  <span>Tip: Use arrow keys to navigate floors • Tab to move between fields</span>
+                </div>
               </div>
 
               {/* Units Table for Current Floor */}
