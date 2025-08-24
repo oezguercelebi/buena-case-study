@@ -29,7 +29,7 @@ export class PropertyService {
       ...createPropertyDto,
       unitCount: totalUnits,
       lastModified: new Date().toISOString(),
-      status: 'draft',
+      status: 'active',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -47,7 +47,7 @@ export class PropertyService {
     const mvProperties = this.properties.filter(p => p.type === 'MV').length;
     const totalUnits = this.properties.reduce((sum, p) => sum + p.unitCount, 0);
     const activeProperties = this.properties.filter(p => p.status === 'active').length;
-    const draftProperties = this.properties.filter(p => p.status === 'draft').length;
+    const archivedProperties = this.properties.filter(p => p.status === 'archived').length;
     
     return {
       totalProperties,
@@ -55,7 +55,7 @@ export class PropertyService {
       mvProperties,
       totalUnits,
       activeProperties,
-      draftProperties,
+      archivedProperties,
       averageUnitsPerProperty: totalProperties > 0 ? Math.round(totalUnits / totalProperties) : 0,
     };
   }
@@ -81,8 +81,8 @@ export class PropertyService {
     return this.properties[index];
   }
 
-  // Create a new draft property
-  createDraft(initialData?: Partial<AutosavePropertyDto>): Property {
+  // Create a new property with initial data
+  createPropertyWithData(initialData?: Partial<AutosavePropertyDto>): Property {
     const property: Property = {
       id: Date.now().toString(),
       name: initialData?.name || '',
@@ -95,7 +95,7 @@ export class PropertyService {
       buildings: (initialData?.buildings as any[]) || [],
       unitCount: 0,
       lastModified: new Date().toISOString(),
-      status: 'draft',
+      status: 'active',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       step1Complete: initialData?.step1Complete || false,
@@ -108,7 +108,7 @@ export class PropertyService {
     return property;
   }
 
-  // Autosave functionality - updates a draft with partial data
+  // Autosave functionality - updates property with partial data
   autosave(id: string, data: AutosavePropertyDto): Property {
     const index = this.properties.findIndex(property => property.id === id);
     if (index === -1) {
@@ -116,11 +116,6 @@ export class PropertyService {
     }
 
     const property = this.properties[index];
-
-    // Only allow autosave on draft properties
-    if (property.status !== 'draft') {
-      throw new Error('Can only autosave draft properties');
-    }
 
     // Calculate unit count if buildings are updated
     let unitCount = property.unitCount;
@@ -147,10 +142,6 @@ export class PropertyService {
     const property = this.findOne(id);
     if (!property) {
       throw new NotFoundException(`Property with id ${id} not found`);
-    }
-
-    if (property.status !== 'draft') {
-      throw new Error('Can only update steps on draft properties');
     }
 
     let updateData: Partial<Property> = {
@@ -195,32 +186,6 @@ export class PropertyService {
     return this.autosave(id, updateData);
   }
 
-  // Finalize a draft property (convert to active)
-  finalizeDraft(id: string): Property {
-    const property = this.findOne(id);
-    if (!property) {
-      throw new NotFoundException(`Property with id ${id} not found`);
-    }
-
-    if (property.status !== 'draft') {
-      throw new Error('Can only finalize draft properties');
-    }
-
-    // Validate that all required steps are complete
-    if (!this.isDraftComplete(property)) {
-      throw new Error('Cannot finalize incomplete draft. All steps must be completed.');
-    }
-
-    const index = this.properties.findIndex(p => p.id === id);
-    this.properties[index] = {
-      ...property,
-      status: 'active',
-      lastModified: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    return this.properties[index];
-  }
 
   // Helper methods for step completion validation
   private isStep1Complete(data: GeneralInfoStepDto): boolean {
@@ -261,18 +226,9 @@ export class PropertyService {
     });
   }
 
-  private isDraftComplete(property: Property): boolean {
-    return !!(property.step1Complete && property.step2Complete && property.step3Complete);
-  }
-
-  // Get all draft properties
-  getDrafts(): Property[] {
-    return this.properties.filter(property => property.status === 'draft');
-  }
-
-  // Delete a draft property
-  deleteDraft(id: string): boolean {
-    const index = this.properties.findIndex(property => property.id === id && property.status === 'draft');
+  // Delete a property
+  deleteProperty(id: string): boolean {
+    const index = this.properties.findIndex(property => property.id === id);
     if (index === -1) {
       return false;
     }
@@ -284,120 +240,140 @@ export class PropertyService {
     const seedProperties: Property[] = [
       {
         id: '1',
-        name: 'Friedrichstraße 123 WEG',
+        name: 'Berliner Straße 42',
         type: 'WEG',
-        propertyNumber: 'WEG-2024-001',
-        managementCompany: 'Berlin Property Management GmbH',
-        propertyManager: 'Max Mustermann',
-        accountant: 'Anna Schmidt',
-        address: 'Friedrichstraße 123, 10117 Berlin',
-        unitCount: 24,
-        lastModified: '2024-01-15T10:00:00.000Z',
+        propertyNumber: 'WEG-2025-001',
+        managementCompany: 'Hausverwaltung Schmidt & Partners',
+        propertyManager: 'Thomas Schmidt',
+        accountant: 'Lisa Becker',
+        address: 'Berliner Straße 42, 10115 Berlin',
+        unitCount: 12,
+        lastModified: '2025-01-20T14:30:00.000Z',
         status: 'active',
-        createdAt: '2024-01-01T10:00:00.000Z',
-        updatedAt: '2024-01-15T10:00:00.000Z',
+        createdAt: '2025-01-15T09:00:00.000Z',
+        updatedAt: '2025-01-20T14:30:00.000Z',
         step1Complete: true,
         step2Complete: true,
         step3Complete: true,
         currentStep: 3,
         buildings: [
           {
-            streetName: 'Friedrichstraße',
-            houseNumber: '123',
-            postalCode: '10117',
+            streetName: 'Berliner Straße',
+            houseNumber: '42',
+            postalCode: '10115',
             city: 'Berlin',
             buildingType: 'altbau',
-            floors: 6,
-            unitsPerFloor: 4,
-            constructionYear: 1910,
-            units: Array.from({ length: 24 }, (_, i) => ({
-              unitNumber: `${Math.floor(i / 4) + 1}${String.fromCharCode(65 + (i % 4))}`,
-              floor: Math.floor(i / 4),
+            floors: 4,
+            unitsPerFloor: 3,
+            constructionYear: 1905,
+            units: Array.from({ length: 12 }, (_, i) => ({
+              unitNumber: `${Math.floor(i / 3) + 1}.${(i % 3) + 1}`,
+              floor: Math.floor(i / 3),
               type: 'apartment' as const,
-              rooms: i % 3 === 0 ? 2 : i % 3 === 1 ? 3 : 4,
-              size: 65 + Math.floor(i / 4) * 5 + (i % 4) * 10,
-              ownershipShare: 100 / 24,
-              owner: `Owner ${i + 1}`,
+              rooms: [3, 4, 2][i % 3],
+              size: [85, 110, 65][i % 3],
+              ownershipShare: 8.33,
+              owner: `${['Familie', 'Herr', 'Frau'][i % 3]} ${['Meyer', 'Schmidt', 'Weber', 'Wagner'][Math.floor(i / 3)]}`,
             })),
           },
         ],
       },
       {
         id: '2',
-        name: 'Potsdamer Platz 45',
+        name: 'Moderne Wohnanlage Spree',
         type: 'MV',
-        propertyNumber: 'MV-2024-002',
-        managementCompany: 'Modern Living Properties',
-        propertyManager: 'Julia Weber',
-        accountant: 'Thomas Klein',
-        address: 'Potsdamer Platz 45, 10785 Berlin',
-        unitCount: 60,
-        lastModified: '2024-01-14T10:00:00.000Z',
+        propertyNumber: 'MV-2025-001',
+        managementCompany: 'Immobilien Berlin GmbH',
+        propertyManager: 'Sarah Johnson',
+        accountant: 'Martin Fischer',
+        address: 'Spreeweg 15-17, 10557 Berlin',
+        unitCount: 48,
+        lastModified: '2025-01-22T11:15:00.000Z',
         status: 'active',
-        createdAt: '2024-01-02T10:00:00.000Z',
-        updatedAt: '2024-01-14T10:00:00.000Z',
+        createdAt: '2025-01-10T10:00:00.000Z',
+        updatedAt: '2025-01-22T11:15:00.000Z',
         step1Complete: true,
         step2Complete: true,
         step3Complete: true,
         currentStep: 3,
         buildings: [
           {
-            streetName: 'Potsdamer Platz',
-            houseNumber: '45',
-            postalCode: '10785',
+            streetName: 'Spreeweg',
+            houseNumber: '15',
+            postalCode: '10557',
             city: 'Berlin',
             buildingType: 'neubau',
-            floors: 10,
-            unitsPerFloor: 6,
-            constructionYear: 2018,
-            units: Array.from({ length: 60 }, (_, i) => ({
-              unitNumber: `${Math.floor(i / 6) + 1}${String.fromCharCode(65 + (i % 6))}`,
-              floor: Math.floor(i / 6),
+            floors: 6,
+            unitsPerFloor: 4,
+            constructionYear: 2020,
+            units: Array.from({ length: 24 }, (_, i) => ({
+              unitNumber: `A${Math.floor(i / 4) + 1}.${(i % 4) + 1}`,
+              floor: Math.floor(i / 4),
               type: 'apartment' as const,
-              rooms: i % 4 === 0 ? 1 : i % 4 === 1 ? 2 : i % 4 === 2 ? 3 : 4,
-              size: 45 + (i % 4) * 25,
-              rent: 800 + (i % 4) * 400 + Math.floor(i / 6) * 50,
-              tenant: i % 3 === 0 ? undefined : `Tenant ${i + 1}`,
+              rooms: [1, 2, 3, 2][i % 4],
+              size: [45, 65, 85, 55][i % 4],
+              rent: [950, 1250, 1650, 1100][i % 4],
+              tenant: i % 5 === 0 ? undefined : `Mieter ${i + 1}`,
+            })),
+          },
+          {
+            streetName: 'Spreeweg',
+            houseNumber: '17',
+            postalCode: '10557',
+            city: 'Berlin',
+            buildingType: 'neubau',
+            floors: 6,
+            unitsPerFloor: 4,
+            constructionYear: 2020,
+            units: Array.from({ length: 24 }, (_, i) => ({
+              unitNumber: `B${Math.floor(i / 4) + 1}.${(i % 4) + 1}`,
+              floor: Math.floor(i / 4),
+              type: 'apartment' as const,
+              rooms: [2, 3, 1, 2][i % 4],
+              size: [60, 80, 40, 55][i % 4],
+              rent: [1150, 1450, 850, 1050][i % 4],
+              tenant: i % 6 === 0 ? undefined : `Mieter ${i + 25}`,
             })),
           },
         ],
       },
       {
         id: '3',
-        name: 'Alexanderplatz 78 WEG',
+        name: 'Charlottenburger Höfe',
         type: 'WEG',
-        propertyNumber: 'WEG-2024-003',
-        managementCompany: 'City Center Management',
-        propertyManager: 'Stefan Müller',
-        accountant: 'Maria Fischer',
-        address: 'Alexanderplatz 78, 10178 Berlin',
-        unitCount: 36,
-        lastModified: '2024-01-10T10:00:00.000Z',
-        status: 'draft',
-        createdAt: '2024-01-05T10:00:00.000Z',
-        updatedAt: '2024-01-10T10:00:00.000Z',
+        propertyNumber: 'WEG-2025-002',
+        managementCompany: 'Premium Property Management',
+        propertyManager: 'Dr. Michael Hoffmann',
+        accountant: 'Christina Neumann',
+        address: 'Kurfürstendamm 250, 10719 Berlin',
+        unitCount: 8,
+        lastModified: '2025-01-23T16:45:00.000Z',
+        status: 'active',
+        createdAt: '2025-01-18T12:00:00.000Z',
+        updatedAt: '2025-01-23T16:45:00.000Z',
         step1Complete: true,
         step2Complete: true,
-        step3Complete: false,
+        step3Complete: true,
         currentStep: 3,
         buildings: [
           {
-            streetName: 'Alexanderplatz',
-            houseNumber: '78',
-            postalCode: '10178',
+            streetName: 'Kurfürstendamm',
+            houseNumber: '250',
+            postalCode: '10719',
             city: 'Berlin',
-            buildingType: 'mixed',
-            floors: 9,
-            unitsPerFloor: 4,
-            constructionYear: 1975,
-            units: Array.from({ length: 36 }, (_, i) => ({
-              unitNumber: `${Math.floor(i / 4) + 1}${String.fromCharCode(65 + (i % 4))}`,
-              floor: Math.floor(i / 4),
-              type: i < 4 ? 'commercial' as const : 'apartment' as const,
-              rooms: i < 4 ? 1 : i % 3 === 0 ? 2 : i % 3 === 1 ? 3 : 4,
-              size: i < 4 ? 120 : 70 + (i % 3) * 15,
-              ownershipShare: 100 / 36,
-              owner: `Owner ${i + 1}`,
+            buildingType: 'altbau',
+            floors: 4,
+            unitsPerFloor: 2,
+            constructionYear: 1895,
+            units: Array.from({ length: 8 }, (_, i) => ({
+              unitNumber: `${Math.floor(i / 2) + 1}${i % 2 === 0 ? 'A' : 'B'}`,
+              floor: Math.floor(i / 2),
+              type: 'apartment' as const,
+              rooms: i % 2 === 0 ? 5 : 4,
+              size: i % 2 === 0 ? 165 : 135,
+              ownershipShare: 12.5,
+              owner: ['Dr. Klaus Weber', 'Maria Schulz', 'Familie Richter', 'Hans-Peter König', 
+                      'Ingrid Lehmann', 'Prof. Müller', 'Familie Braun', 'Sophie Wagner'][i],
             })),
           },
         ],

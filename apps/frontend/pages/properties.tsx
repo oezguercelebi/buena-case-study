@@ -18,7 +18,7 @@ interface Property {
   unitCount: number
   address: string
   lastModified: string
-  status: "draft" | "active" | "archived"
+  status: "active" | "archived"
 }
 
 export default function PropertiesPage() {
@@ -101,11 +101,6 @@ export default function PropertiesPage() {
                     >
                       {property.type}
                     </span>
-                    {property.status === "draft" && (
-                      <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                        Draft
-                      </span>
-                    )}
                   </div>
                   
                   <div className="mt-3 grid grid-cols-3 gap-6 text-sm">

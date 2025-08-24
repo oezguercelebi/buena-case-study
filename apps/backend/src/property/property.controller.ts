@@ -18,11 +18,6 @@ export class PropertyController {
     return this.propertyService.getStats();
   }
 
-  @Get('drafts')
-  getDrafts() {
-    return this.propertyService.getDrafts();
-  }
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.propertyService.findOne(id);
@@ -38,17 +33,8 @@ export class PropertyController {
     return this.propertyService.update(id, updatePropertyDto);
   }
 
-  // Draft management endpoints
+  // Property management endpoints
   
-  @Post('draft')
-  createDraft(@Body() initialData?: Partial<AutosavePropertyDto>) {
-    try {
-      return this.propertyService.createDraft(initialData);
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
-    }
-  }
-
   @Patch(':id/autosave')
   autosave(@Param('id') id: string, @Body() data: AutosavePropertyDto) {
     try {
@@ -81,24 +67,12 @@ export class PropertyController {
     }
   }
 
-  @Post(':id/finalize')
-  finalizeDraft(@Param('id') id: string) {
-    try {
-      return this.propertyService.finalizeDraft(id);
-    } catch (error) {
-      throw new HttpException(
-        error.message, 
-        error.message.includes('not found') ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST
-      );
-    }
-  }
-
-  @Delete('draft/:id')
-  deleteDraft(@Param('id') id: string) {
-    const success = this.propertyService.deleteDraft(id);
+  @Delete(':id')
+  deleteProperty(@Param('id') id: string) {
+    const success = this.propertyService.deleteProperty(id);
     if (!success) {
-      throw new HttpException('Draft not found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Property not found', HttpStatus.NOT_FOUND);
     }
-    return { message: 'Draft deleted successfully' };
+    return { message: 'Property deleted successfully' };
   }
 }

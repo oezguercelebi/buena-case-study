@@ -6,12 +6,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
   
-  // Enable validation globally with partial validation for drafts
+  // Enable validation globally with partial validation for properties
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: false, // Allow extra properties for flexibility
     transform: true,
-    skipMissingProperties: true, // Allow partial data for drafts
+    skipMissingProperties: true, // Allow partial data for properties
     skipNullProperties: false,
     skipUndefinedProperties: false,
   }));

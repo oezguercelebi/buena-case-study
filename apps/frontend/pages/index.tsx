@@ -10,7 +10,7 @@ interface PropertyStats {
   mvProperties: number
   totalUnits: number
   activeProperties: number
-  draftProperties: number
+  archivedProperties: number
   averageUnitsPerProperty: number
 }
 
@@ -62,7 +62,7 @@ export default function HomePage() {
                     {stats?.totalProperties || 0}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    {stats?.activeProperties || 0} active, {stats?.draftProperties || 0} draft
+                    {stats?.activeProperties || 0} active
                   </p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">

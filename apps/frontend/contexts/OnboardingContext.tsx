@@ -43,7 +43,6 @@ const OnboardingContext = createContext<OnboardingContextValue | undefined>(unde
 const initialState: OnboardingState = {
   data: {
     aiExtractionEnabled: true,
-    isDraft: true,
     currentStep: 0,
     completedSteps: [],
   },
@@ -94,25 +93,6 @@ function onboardingReducer(state: OnboardingState, action: OnboardingAction): On
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(onboardingReducer, initialState)
-
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const success = loadFromLocalStorage()
-    if (success) {
-      console.log('Loaded existing onboarding data from localStorage')
-    }
-  }, [])
-
-  // Auto-save to localStorage when data changes
-  useEffect(() => {
-    if (state.hasUnsavedChanges) {
-      const timeoutId = setTimeout(() => {
-        saveToLocalStorage()
-      }, 1000) // Save after 1 second of inactivity
-
-      return () => clearTimeout(timeoutId)
-    }
-  }, [state.data, state.hasUnsavedChanges])
 
   const updateData = useCallback((updates: Partial<OnboardingPropertyData>) => {
     const updatedData = { ...updates, lastModified: new Date() }
@@ -188,7 +168,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         propertyManager: state.data.propertyManager,
         accountant: state.data.accountant,
         buildings: state.data.buildings || [],
-        status: 'draft',
+        status: 'active', // Save as active property, not draft
       }
 
       await api.post('/properties', propertyData)
@@ -236,6 +216,32 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     const validation = validateStep(state.currentStep)
     return validation.isValid
   }, [state.currentStep, validateStep])
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const success = loadFromLocalStorage()
+    if (success) {
+      console.log('Loaded existing onboarding data from localStorage')
+    }
+  }, [loadFromLocalStorage])
+
+  // Auto-save property to API when data changes
+  useEffect(() => {
+    if (state.hasUnsavedChanges && state.data.propertyName && state.data.propertyType) {
+      const timeoutId = setTimeout(async () => {
+        try {
+          await saveToAPI()
+          console.log('Auto-saved property to API')
+        } catch (error) {
+          console.error('Auto-save failed:', error)
+          // Fall back to localStorage on API failure
+          saveToLocalStorage()
+        }
+      }, 2000) // Save after 2 seconds of inactivity
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [state.data, state.hasUnsavedChanges, saveToAPI, saveToLocalStorage])
 
   const contextValue: OnboardingContextValue = {
     state,

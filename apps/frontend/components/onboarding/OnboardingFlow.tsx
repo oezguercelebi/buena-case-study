@@ -41,15 +41,15 @@ const OnboardingFlowContent: React.FC = () => {
   const [showResumeBanner, setShowResumeBanner] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
 
-  // Check for existing draft on mount
+  // Check for existing property data on mount
   useEffect(() => {
     const hasExistingData = state.data.propertyName || state.data.propertyType
     const isReturningUser = state.currentStep > 0 || hasExistingData
     
-    if (isReturningUser && state.data.isDraft) {
+    if (isReturningUser) {
       setShowResumeBanner(true)
     }
-  }, [state.data.propertyName, state.data.propertyType, state.currentStep, state.data.isDraft])
+  }, [state.data.propertyName, state.data.propertyType, state.currentStep])
 
   const handleNext = async () => {
     // Validate current step before proceeding
@@ -129,7 +129,7 @@ const OnboardingFlowContent: React.FC = () => {
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-blue-600" />
               <span className="text-sm text-blue-800">
-                You have an existing draft from {
+                You have an existing property from {
                   state.data.lastModified 
                     ? new Date(state.data.lastModified).toLocaleDateString() 
                     : 'a previous session'

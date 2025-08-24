@@ -2,7 +2,7 @@ export type PropertyType = 'WEG' | 'MV'
 export type BuildingType = 'altbau' | 'neubau' | 'hochhaus' | 'mixed'
 export type UnitType = 'apartment' | 'office' | 'parking' | 'storage' | 'commercial'
 export type ShareDistributionMethod = 'equal' | 'size' | 'rooms' | 'custom'
-export type PropertyStatus = 'draft' | 'active' | 'archived'
+export type PropertyStatus = 'active' | 'archived'
 
 // Onboarding specific interfaces
 export interface OnboardingPropertyData {
@@ -27,7 +27,6 @@ export interface OnboardingPropertyData {
   currentStep?: number
   completedSteps?: number[]
   lastModified?: Date
-  isDraft?: boolean
 }
 
 export interface OnboardingBuildingData {
