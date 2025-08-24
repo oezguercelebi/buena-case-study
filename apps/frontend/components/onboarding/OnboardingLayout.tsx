@@ -62,7 +62,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
             </div>
 
             {/* Right side - Auto-save indicator */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 w-20">
               <div className="flex items-center justify-end gap-1.5 text-xs">
                 {autoSaved ? (
                   <>
