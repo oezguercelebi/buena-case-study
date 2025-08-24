@@ -130,11 +130,36 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) =>
       <div className="text-center mb-8">
         <h2 className="text-2xl font-semibold mb-2">General Information</h2>
         <p className="text-gray-600">
-          Upload your document and let AI fill out everything for you
+          Enter your property details below
         </p>
       </div>
 
-      <div className="border rounded-lg p-6 bg-white">
+      {/* 
+        AI DOCUMENT EXTRACTION FEATURE - TEMPORARILY DISABLED
+        
+        How it would work:
+        1. User uploads property documents (PDF, JPG, PNG up to 10MB)
+        2. File is sent to backend AI extraction endpoint (POST /api/property/extract-document)
+        3. AI service processes the document using OCR and NLP to extract:
+           - Property name, number, and address
+           - Building information and structure
+           - Unit details (numbers, sizes, ownership shares for WEG)
+           - Tenant information and rent amounts (for MV properties)
+           - Legal entity information and tax numbers
+        
+        4. Extracted data is returned as structured JSON and auto-populates all form fields
+        5. User can review and edit the extracted information before proceeding
+        6. System maintains confidence scores for each extracted field
+        7. Low-confidence fields are highlighted for manual review
+        
+        To enable this feature:
+        - Implement backend extraction endpoint with AI/ML service integration
+        - Add document upload handling and storage
+        - Configure AI extraction pipeline (OCR + NLP models)
+        - Uncomment the code block below
+      */}
+      
+      {/* <div className="border rounded-lg p-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-medium flex items-center gap-2">
@@ -212,7 +237,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) =>
         <div className="flex-grow h-px bg-gray-200"></div>
         <span className="text-sm text-gray-600">OR</span>
         <div className="flex-grow h-px bg-gray-200"></div>
-      </div>
+      </div> */}
 
       <div className="border rounded-lg p-6 bg-white">
         <h3 className="text-sm font-medium mb-4">Enter Details Manually</h3>
