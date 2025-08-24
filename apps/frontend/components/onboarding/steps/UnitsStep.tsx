@@ -97,8 +97,15 @@ const UnitsStep: React.FC = () => {
         }
 
         if (propertyType === 'WEG') {
-          // Equal ownership shares
-          unit.ownershipShare = parseFloat((100 / totalUnits).toFixed(3))
+          // Calculate ownership shares to sum exactly to 100%
+          // Use base share for most units, adjust last few to make exactly 100
+          const baseShare = Math.floor((100 / totalUnits) * 1000) / 1000
+          const currentUnitIndex = (floor - startingFloor) * patternConfig.unitsPerFloor + unitNum - 1
+          const remainder = 100 - (baseShare * totalUnits)
+          const unitsToAdjust = Math.round(remainder / 0.001)
+          
+          // Add 0.001 to the first few units to compensate for rounding
+          unit.ownershipShare = currentUnitIndex < unitsToAdjust ? baseShare + 0.001 : baseShare
         } else if (propertyType === 'MV') {
           // Higher rent for higher floors (relative to starting floor)
           const relativeFloor = floor - startingFloor
@@ -353,16 +360,6 @@ const UnitsStep: React.FC = () => {
             </Button>
           </div>
 
-          {/* Ownership validation for WEG */}
-          {propertyType === 'WEG' && (
-            <div className={`p-3 rounded-lg ${isOwnershipValid ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-              <p className="text-sm font-medium">
-                Total Ownership: {totalOwnershipShare.toFixed(3)}% 
-                {isOwnershipValid ? ' ✓' : ' (must equal 100%)'}
-              </p>
-            </div>
-          )}
-
           {/* Grid Table */}
           <Card className="p-6">
             <div className="space-y-4">
@@ -543,6 +540,33 @@ const UnitsStep: React.FC = () => {
                   )}
                 </div>
               </div>
+              
+              {/* Ownership Share Total for WEG properties */}
+              {propertyType === 'WEG' && units.length > 0 && (
+                <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Total Ownership Shares:</span>
+                    <span className={`text-sm font-bold ${
+                      Math.abs(units.reduce((sum, u) => sum + (u.ownershipShare || 0), 0) - 100) <= 0.1 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {units.reduce((sum, u) => sum + (u.ownershipShare || 0), 0).toFixed(3)}%
+                    </span>
+                  </div>
+                  {(() => {
+                    const total = units.reduce((sum, u) => sum + (u.ownershipShare || 0), 0);
+                    const difference = Math.abs(total - 100);
+                    if (difference <= 0.001) {
+                      return <p className="text-xs text-green-600 mt-1">✓ Perfect! Shares total exactly 100%</p>;
+                    } else if (difference <= 0.1) {
+                      return <p className="text-xs text-green-600 mt-1">✓ Within acceptable tolerance (±0.1%)</p>;
+                    } else {
+                      return <p className="text-xs text-red-600 mt-1">⚠ Must be within 0.1% of 100% (difference: {(total - 100).toFixed(3)}%)</p>;
+                    }
+                  })()}
+                </div>
+              )}
             </div>
           </Card>
         </div>

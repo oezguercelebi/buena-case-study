@@ -119,14 +119,22 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
               Back
             </button>
 
-            <button
-              className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center cursor-pointer"
-              onClick={onNext}
-              disabled={!isCurrentStepValid}
-            >
-              {isLastStep ? 'Complete Property' : 'Continue'}
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </button>
+            <div className="flex flex-col items-end gap-2">
+              {!isCurrentStepValid && validationErrors.length > 0 && (
+                <div className="text-xs text-red-500 max-w-xs text-right">
+                  {validationErrors[0]}
+                </div>
+              )}
+              <button
+                className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center cursor-pointer"
+                onClick={onNext}
+                disabled={!isCurrentStepValid}
+                title={!isCurrentStepValid && validationErrors.length > 0 ? validationErrors[0] : ''}
+              >
+                {isLastStep ? 'Complete Property' : 'Continue'}
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
