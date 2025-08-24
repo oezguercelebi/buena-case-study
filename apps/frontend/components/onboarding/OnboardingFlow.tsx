@@ -135,14 +135,8 @@ const OnboardingFlowContent: React.FC = () => {
         buildings: property.buildings,
       })
       
-      // Determine which step to start from based on completion
-      if (property.step1Complete && property.step2Complete) {
-        setCurrentStep(2) // Go to units step
-      } else if (property.step1Complete) {
-        setCurrentStep(1) // Go to buildings step
-      } else {
-        setCurrentStep(0) // Start from beginning
-      }
+      // Always start from the beginning to allow reviewing/editing all steps
+      setCurrentStep(0)
       
       setShowEntryModal(false)
     } catch (error) {
