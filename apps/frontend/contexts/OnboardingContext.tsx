@@ -200,6 +200,41 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     
     try {
       // Transform onboarding data to API format
+      // Map buildings to include unitsPerFloor (calculate from units if not present)
+      const validUnitTypes = ['apartment', 'office', 'parking', 'storage', 'commercial'];
+      
+      const mappedBuildings = (state.data.buildings || []).map(building => {
+        // Calculate unitsPerFloor from units if available
+        const unitsPerFloor = building.units && building.units.length > 0 && building.floors
+          ? Math.ceil(building.units.length / building.floors)
+          : 4 // default
+          
+        return {
+          ...building,
+          unitsPerFloor,
+          // Ensure unit types are valid strings
+          units: (building.units || []).map((unit, index) => {
+            const unitType = unit.type || 'apartment';
+            
+            // Validate the type
+            if (!validUnitTypes.includes(unitType)) {
+              console.error(`Invalid unit type at index ${index}:`, unitType);
+              return {
+                ...unit,
+                type: 'apartment', // Force default if invalid
+                unitNumber: String(unit.unitNumber || ''),
+              };
+            }
+            
+            return {
+              ...unit,
+              type: unitType,
+              unitNumber: String(unit.unitNumber || ''),
+            };
+          })
+        }
+      })
+      
       const propertyData = {
         name: state.data.name,
         type: state.data.type,
@@ -208,7 +243,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         propertyManager: state.data.propertyManager,
         accountant: state.data.accountant,
         address: state.data.address,
-        buildings: state.data.buildings || [],
+        buildings: mappedBuildings,
         currentStep: isCompleting ? 3 : state.currentStep + 1, // Backend expects 1-based step numbers
         step1Complete: state.currentStep >= 0,
         step2Complete: state.currentStep >= 1,

@@ -231,7 +231,8 @@ export class PropertyValidationService {
         totalFields += unitFieldsCount;
 
         // Unit Number
-        if (!unit.unitNumber?.trim()) {
+        const unitNumberStr = unit.unitNumber != null ? String(unit.unitNumber) : '';
+        if (!unitNumberStr.trim()) {
           errors.push({ 
             field: `buildings[${buildingIndex}].units[${unitIndex}].unitNumber`, 
             message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} number is required` 
@@ -320,7 +321,10 @@ export class PropertyValidationService {
     data.buildings.forEach((building, buildingIndex) => {
       if (!building.units) return;
       
-      const unitNumbers = building.units.map(u => u.unitNumber?.trim().toLowerCase()).filter(Boolean);
+      const unitNumbers = building.units.map(u => {
+        const numStr = u.unitNumber != null ? String(u.unitNumber) : '';
+        return numStr.trim().toLowerCase();
+      }).filter(Boolean);
       const duplicates = unitNumbers.filter((num, index) => unitNumbers.indexOf(num) !== index);
       
       if (duplicates.length > 0) {
