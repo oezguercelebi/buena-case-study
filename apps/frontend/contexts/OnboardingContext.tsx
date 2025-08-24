@@ -13,6 +13,7 @@ interface OnboardingState {
   lastSaved: Date | null
   errors: Record<string, string[]>
   hasUnsavedChanges: boolean
+  propertyId: string | null // Track the created property ID
 }
 
 type OnboardingAction =
@@ -23,6 +24,7 @@ type OnboardingAction =
   | { type: 'SET_LAST_SAVED'; payload: Date | null }
   | { type: 'SET_ERRORS'; payload: Record<string, string[]> }
   | { type: 'SET_UNSAVED_CHANGES'; payload: boolean }
+  | { type: 'SET_PROPERTY_ID'; payload: string | null }
   | { type: 'RESET_STATE' }
   | { type: 'LOAD_FROM_STORAGE'; payload: OnboardingState }
 
@@ -30,6 +32,7 @@ interface OnboardingContextValue {
   state: OnboardingState
   updateData: (updates: Partial<OnboardingPropertyData>) => void
   setCurrentStep: (step: number) => void
+  setPropertyId: (id: string | null) => void
   saveToLocalStorage: () => void
   loadFromLocalStorage: () => boolean
   saveToAPI: () => Promise<void>
@@ -52,6 +55,7 @@ const initialState: OnboardingState = {
   lastSaved: null,
   errors: {},
   hasUnsavedChanges: false,
+  propertyId: null,
 }
 
 function onboardingReducer(state: OnboardingState, action: OnboardingAction): OnboardingState {
@@ -82,6 +86,8 @@ function onboardingReducer(state: OnboardingState, action: OnboardingAction): On
       return { ...state, errors: action.payload }
     case 'SET_UNSAVED_CHANGES':
       return { ...state, hasUnsavedChanges: action.payload }
+    case 'SET_PROPERTY_ID':
+      return { ...state, propertyId: action.payload }
     case 'RESET_STATE':
       return initialState
     case 'LOAD_FROM_STORAGE':
@@ -106,6 +112,15 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     updateData({ completedSteps })
   }, [updateData])
 
+  const setPropertyId = useCallback((id: string | null) => {
+    dispatch({ type: 'SET_PROPERTY_ID', payload: id })
+    if (id) {
+      localStorage.setItem(STORAGE_KEYS.PROPERTY_ID, id)
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.PROPERTY_ID)
+    }
+  }, [])
+
   const saveToLocalStorage = useCallback(() => {
     try {
       const dataToSave = {
@@ -115,18 +130,22 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       localStorage.setItem(STORAGE_KEYS.ONBOARDING_DATA, JSON.stringify(dataToSave))
       localStorage.setItem(STORAGE_KEYS.ONBOARDING_STEP, state.currentStep.toString())
       localStorage.setItem(STORAGE_KEYS.LAST_SAVED, new Date().toISOString())
+      if (state.propertyId) {
+        localStorage.setItem(STORAGE_KEYS.PROPERTY_ID, state.propertyId)
+      }
       
       dispatch({ type: 'SET_LAST_SAVED', payload: new Date() })
     } catch (error) {
       console.error('Failed to save to localStorage:', error)
     }
-  }, [state.data, state.currentStep])
+  }, [state.data, state.currentStep, state.propertyId])
 
   const loadFromLocalStorage = useCallback((): boolean => {
     try {
       const savedData = localStorage.getItem(STORAGE_KEYS.ONBOARDING_DATA)
       const savedStep = localStorage.getItem(STORAGE_KEYS.ONBOARDING_STEP)
       const lastSaved = localStorage.getItem(STORAGE_KEYS.LAST_SAVED)
+      const propertyId = localStorage.getItem(STORAGE_KEYS.PROPERTY_ID)
 
       if (savedData) {
         const parsedData: OnboardingPropertyData = JSON.parse(savedData)
@@ -141,6 +160,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
             currentStep,
             lastSaved: lastSavedDate,
             hasUnsavedChanges: false,
+            propertyId: propertyId || null,
           },
         })
         return true
@@ -169,15 +189,23 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         accountant: state.data.accountant,
         address: state.data.address,
         buildings: state.data.buildings || [],
-        status: 'active', // Save as active property, not draft
+        currentStep: state.currentStep + 1, // Backend expects 1-based step numbers
+        step1Complete: state.currentStep >= 0,
+        step2Complete: state.currentStep >= 1,
+        step3Complete: state.currentStep >= 2,
       }
 
-      await api.post('/property', propertyData)
-      
-      // Clear localStorage after successful save
-      localStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA)
-      localStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP)
-      localStorage.removeItem(STORAGE_KEYS.LAST_SAVED)
+      let response;
+      if (state.propertyId) {
+        // Update existing property using autosave endpoint
+        response = await api.patch(`/property/${state.propertyId}/autosave`, propertyData)
+      } else {
+        // Create new property
+        response = await api.post('/property', propertyData)
+        // Store the new property ID
+        dispatch({ type: 'SET_PROPERTY_ID', payload: response.id })
+        localStorage.setItem(STORAGE_KEYS.PROPERTY_ID, response.id)
+      }
       
       dispatch({ type: 'SET_LAST_SAVED', payload: new Date() })
     } catch (error) {
@@ -186,7 +214,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     } finally {
       dispatch({ type: 'SET_SAVING', payload: false })
     }
-  }, [state.data])
+  }, [state.data, state.propertyId, state.currentStep])
 
   const validateStep = useCallback((step: number): StepValidation => {
     switch (step) {
@@ -206,6 +234,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     localStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA)
     localStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP)
     localStorage.removeItem(STORAGE_KEYS.LAST_SAVED)
+    localStorage.removeItem(STORAGE_KEYS.PROPERTY_ID)
   }, [])
 
   const canNavigateToStep = useCallback((targetStep: number): boolean => {
@@ -218,13 +247,8 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     return validation.isValid
   }, [state.currentStep, validateStep])
 
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const success = loadFromLocalStorage()
-    if (success) {
-      console.log('Loaded existing onboarding data from localStorage')
-    }
-  }, [loadFromLocalStorage])
+  // Note: We don't auto-load from localStorage anymore
+  // The OnboardingFlow component will handle loading after validating the property exists
 
   // Auto-save property to API when data changes
   useEffect(() => {
@@ -248,6 +272,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     state,
     updateData,
     setCurrentStep,
+    setPropertyId,
     saveToLocalStorage,
     loadFromLocalStorage,
     saveToAPI,

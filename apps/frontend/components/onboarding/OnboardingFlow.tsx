@@ -11,7 +11,9 @@ import BuildingsStep from './steps/BuildingsStep'
 import UnitsStep from './steps/UnitsStep'
 import { OnboardingEntryModal } from './OnboardingEntryModal'
 import { api } from '../../utils/api'
+import { STORAGE_KEYS } from '../../types/property'
 import type { Step } from '../ui/steps'
+import type { FieldError } from '../../services/validation'
 
 export type OnboardingStepId = 'property' | 'buildings' | 'units'
 
@@ -38,14 +40,14 @@ const onboardingSteps: Step[] = [
 
 const OnboardingFlowContent: React.FC = () => {
   const router = useRouter()
-  const { state, setCurrentStep, validateStep, canNavigateToStep, saveToAPI, resetOnboarding, updateData } = useOnboarding()
+  const { state, setCurrentStep, setPropertyId, validateStep, canNavigateToStep, saveToAPI, resetOnboarding, updateData, loadFromLocalStorage } = useOnboarding()
   const { forceSave } = useAutosave({ enabled: true })
-  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [validationErrors, setValidationErrors] = useState<FieldError[]>([])
   const [showEntryModal, setShowEntryModal] = useState(false)
   const [incompleteProperties, setIncompleteProperties] = useState<any[]>([])
   const [loadingProperties, setLoadingProperties] = useState(true)
 
-  // Fetch incomplete properties on mount
+  // Fetch incomplete properties on mount and validate localStorage
   useEffect(() => {
     fetchIncompleteProperties()
   }, [])
@@ -59,9 +61,41 @@ const OnboardingFlowContent: React.FC = () => {
         (prop: any) => prop.completionPercentage >= 0 && prop.completionPercentage < 100
       )
       setIncompleteProperties(incomplete)
-      // Only show modal if there are incomplete properties
-      if (incomplete.length > 0) {
-        setShowEntryModal(true)
+      
+      // Check if there's a property ID in localStorage
+      const storedPropertyId = localStorage.getItem(STORAGE_KEYS.PROPERTY_ID)
+      
+      if (storedPropertyId) {
+        // Check if this property still exists and is incomplete
+        const matchingProperty = incomplete.find(p => p.id === storedPropertyId)
+        
+        if (matchingProperty) {
+          // Property exists and is incomplete, load localStorage data
+          const success = loadFromLocalStorage()
+          if (success) {
+            console.log('Loaded existing onboarding data for property:', storedPropertyId)
+          }
+          // Show modal to let user choose to continue or start new
+          if (incomplete.length > 0) {
+            setShowEntryModal(true)
+          }
+        } else {
+          // Property doesn't exist or is complete, clear localStorage
+          resetOnboarding()
+          // Show modal if there are other incomplete properties
+          if (incomplete.length > 0) {
+            setShowEntryModal(true)
+          }
+        }
+      } else {
+        // No stored property ID
+        if (incomplete.length > 0) {
+          // Show modal to choose from incomplete properties
+          setShowEntryModal(true)
+        } else {
+          // No incomplete properties, ensure we start fresh
+          resetOnboarding()
+        }
       }
     } catch (error) {
       console.error('Error fetching properties:', error)
@@ -71,14 +105,23 @@ const OnboardingFlowContent: React.FC = () => {
   }
 
   const handleCreateNew = () => {
+    // Completely reset onboarding state and clear all localStorage
     resetOnboarding()
+    setPropertyId(null)
+    setCurrentStep(0)
     setShowEntryModal(false)
   }
 
   const handleContinueProperty = async (propertyId: string) => {
     try {
+      // First reset to clear any stale data
+      resetOnboarding()
+      
       // Fetch the property details
       const property = await api.get(`/property/${propertyId}`)
+      
+      // Set the property ID in context to enable updates instead of creates
+      setPropertyId(propertyId)
       
       // Load property data into onboarding context
       updateData({
@@ -125,10 +168,15 @@ const OnboardingFlowContent: React.FC = () => {
       // Final step - save to API and complete
       try {
         await saveToAPI()
+        // Clear localStorage and property ID after successful completion
+        localStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA)
+        localStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP)
+        localStorage.removeItem(STORAGE_KEYS.LAST_SAVED)
+        localStorage.removeItem(STORAGE_KEYS.PROPERTY_ID)
         router.push('/properties') // Redirect to properties list
       } catch (error) {
         console.error('Failed to complete onboarding:', error)
-        setValidationErrors(['Failed to save property. Please try again.'])
+        setValidationErrors([{ field: 'general', message: 'Failed to save property. Please try again.' }])
       }
     }
   }
@@ -189,7 +237,7 @@ const OnboardingFlowContent: React.FC = () => {
                 </h4>
                 <ul className="text-sm text-red-700 space-y-1">
                   {validationErrors.map((error, index) => (
-                    <li key={index}>• {error}</li>
+                    <li key={index}>• {error.message}</li>
                   ))}
                 </ul>
               </div>

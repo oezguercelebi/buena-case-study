@@ -137,6 +137,7 @@ export const STORAGE_KEYS = {
   ONBOARDING_DATA: 'buena_onboarding_data',
   ONBOARDING_STEP: 'buena_onboarding_current_step',
   LAST_SAVED: 'buena_onboarding_last_saved',
+  PROPERTY_ID: 'buena_onboarding_property_id',
 } as const
 
 // Validation constants

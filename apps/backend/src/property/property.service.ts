@@ -26,7 +26,13 @@ export class PropertyService {
 
     let property: Property = {
       id: Date.now().toString(),
-      ...createPropertyDto,
+      name: createPropertyDto.name,
+      type: createPropertyDto.type,
+      propertyNumber: createPropertyDto.propertyNumber,
+      managementCompany: createPropertyDto.managementCompany,
+      propertyManager: createPropertyDto.propertyManager,
+      accountant: createPropertyDto.accountant,
+      address: createPropertyDto.address,
       buildings: createPropertyDto.buildings || [],
       unitCount: totalUnits,
       lastModified: new Date().toISOString(),
@@ -89,7 +95,14 @@ export class PropertyService {
 
     let updatedProperty: Property = {
       ...this.properties[index],
-      ...updatePropertyDto,
+      name: updatePropertyDto.name || this.properties[index].name,
+      type: updatePropertyDto.type || this.properties[index].type,
+      propertyNumber: updatePropertyDto.propertyNumber || this.properties[index].propertyNumber,
+      managementCompany: updatePropertyDto.managementCompany || this.properties[index].managementCompany,
+      propertyManager: updatePropertyDto.propertyManager || this.properties[index].propertyManager,
+      accountant: updatePropertyDto.accountant || this.properties[index].accountant,
+      address: updatePropertyDto.address || this.properties[index].address,
+      buildings: updatePropertyDto.buildings || this.properties[index].buildings,
       unitCount: totalUnits,
       lastModified: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
