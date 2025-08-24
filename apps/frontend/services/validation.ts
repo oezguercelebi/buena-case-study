@@ -161,24 +161,38 @@ export class PropertyValidationService {
     let totalUnitsExpected = 0;
     let totalUnitsFound = 0;
     
-    // Check if at least one building has units
-    const hasAnyUnits = data.buildings.some(b => b.units && b.units.length > 0);
+    // Check that ALL buildings have at least one unit
+    const buildingsWithoutUnits = data.buildings.filter(b => !b.units || b.units.length === 0);
     
-    if (!hasAnyUnits) {
-      // If no buildings have units yet, still consider the step valid but incomplete
-      // This allows the user to navigate and add units
+    console.log('validateUnitsStep:', {
+      totalBuildings: data.buildings.length,
+      buildingsWithoutUnits: buildingsWithoutUnits.length,
+      buildingDetails: data.buildings.map(b => ({
+        id: b.id,
+        address: b.address,
+        hasUnits: !!(b.units && b.units.length > 0),
+        unitCount: b.units?.length || 0
+      }))
+    });
+    
+    if (buildingsWithoutUnits.length > 0) {
+      // All buildings must have units for completion
+      errors.push({ 
+        field: 'units', 
+        message: `All buildings must have at least one unit. ${buildingsWithoutUnits.length} building(s) are missing units.` 
+      });
       return { 
         isValid: false, 
-        errors: [{ field: 'units', message: 'At least one unit must be added to a building' }], 
+        errors, 
         completedFields: 0, 
-        totalFields: 1 
+        totalFields: data.buildings.length 
       };
     }
 
     data.buildings.forEach((building, buildingIndex) => {
-      // Only validate buildings that have units - allow buildings without units
+      // Validate all buildings since they all must have units
       if (!building.units || building.units.length === 0) {
-        // Don't treat this as an error - buildings can be added without units initially
+        // This shouldn't happen due to check above, but keep for safety
         return;
       }
 
@@ -266,19 +280,11 @@ export class PropertyValidationService {
       const difference = Math.abs(totalOwnership - 100);
       
       // Only block if the difference is more than the tolerance
-      console.log(`WEG Ownership validation: Total=${totalOwnership.toFixed(3)}%, Difference=${difference.toFixed(3)}%, Tolerance=${TOLERANCE}%`);
-      
       if (difference > TOLERANCE) {
         errors.push({ 
           field: 'ownershipShares', 
           message: `Total ownership shares must be within ${TOLERANCE}% of 100% (currently ${totalOwnership.toFixed(3)}%)` 
         });
-        console.log('❌ Ownership shares BLOCKED - exceeds tolerance');
-      } else if (difference > 0.001) {
-        // Just log a warning for small differences within tolerance
-        console.log(`✅ Ownership shares OK: ${totalOwnership.toFixed(3)}% (within acceptable tolerance of ±${TOLERANCE}%)`);
-      } else {
-        console.log('✅ Ownership shares PERFECT: exactly 100%');
       }
     }
 

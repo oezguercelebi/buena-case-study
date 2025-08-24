@@ -78,7 +78,6 @@ const UnitsStep: React.FC = () => {
     if (!selectedBuilding) return
 
     const generatedUnits: OnboardingUnitData[] = []
-    const totalUnits = selectedBuilding.floors * patternConfig.unitsPerFloor
     const startingFloor = selectedBuilding.startingFloor ?? 0
     
     for (let floor = startingFloor; floor < startingFloor + selectedBuilding.floors; floor++) {
@@ -96,17 +95,7 @@ const UnitsStep: React.FC = () => {
           size: isSmallUnit ? 65 : 85,
         }
 
-        if (propertyType === 'WEG') {
-          // Calculate ownership shares to sum exactly to 100%
-          // Use base share for most units, adjust last few to make exactly 100
-          const baseShare = Math.floor((100 / totalUnits) * 1000) / 1000
-          const currentUnitIndex = (floor - startingFloor) * patternConfig.unitsPerFloor + unitNum - 1
-          const remainder = 100 - (baseShare * totalUnits)
-          const unitsToAdjust = Math.round(remainder / 0.001)
-          
-          // Add 0.001 to the first few units to compensate for rounding
-          unit.ownershipShare = currentUnitIndex < unitsToAdjust ? baseShare + 0.001 : baseShare
-        } else if (propertyType === 'MV') {
+        if (propertyType === 'MV') {
           // Higher rent for higher floors (relative to starting floor)
           const relativeFloor = floor - startingFloor
           const floorMultiplier = 1 + (relativeFloor * 0.02) // 2% increase per floor
@@ -119,9 +108,36 @@ const UnitsStep: React.FC = () => {
 
     // Update the building with new units
     const updatedBuilding = { ...selectedBuilding, units: generatedUnits }
-    const updatedBuildings = buildings.map(b => 
+    let updatedBuildings = buildings.map(b => 
       b.id === selectedBuildingId ? updatedBuilding : b
     )
+    
+    // For WEG properties, after adding units to this building, recalculate ALL ownership shares
+    if (propertyType === 'WEG') {
+      const totalUnitsNow = updatedBuildings.reduce((sum, b) => sum + (b.units?.length || 0), 0)
+      
+      if (totalUnitsNow > 0) {
+        const baseShare = Math.floor((100 / totalUnitsNow) * 1000) / 1000
+        const remainder = 100 - (baseShare * totalUnitsNow)
+        const unitsToAdjust = Math.round(remainder / 0.001)
+        
+        let globalUnitIndex = 0
+        
+        // Recalculate shares for ALL units across ALL buildings
+        updatedBuildings = updatedBuildings.map(building => ({
+          ...building,
+          units: building.units?.map(unit => {
+            const adjustedShare = globalUnitIndex < unitsToAdjust ? baseShare + 0.001 : baseShare
+            globalUnitIndex++
+            return {
+              ...unit,
+              ownershipShare: adjustedShare
+            }
+          }) || []
+        }))
+      }
+    }
+    
     updateData({ buildings: updatedBuildings })
     setCurrentFloor(selectedBuilding.startingFloor ?? 0) // Reset to starting floor
   }

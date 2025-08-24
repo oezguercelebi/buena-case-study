@@ -52,27 +52,17 @@ const OnboardingFlowContent: React.FC = () => {
   const isCurrentStepValid = currentStepValidation.isValid
   
   // Debug validation
-  if (!isCurrentStepValid) {
-    console.log(`Step ${state.currentStep} validation failed:`, currentStepValidation)
-    console.log('Validation errors:', currentStepValidation.errors)
-    if (state.currentStep === 1) {
-      console.log('Current buildings data:', state.data.buildings)
-    } else if (state.currentStep === 2) {
-      console.log('Current units data:', state.data.buildings?.map(b => ({ 
-        address: b.address, 
-        unitsCount: b.units?.length || 0,
-        units: b.units 
-      })))
-      if (state.data.type === 'WEG' && state.data.buildings) {
-        const totalOwnership = state.data.buildings
-          .flatMap(b => b.units || [])
-          .reduce((sum, unit) => sum + (unit.ownershipShare || 0), 0)
-        console.log('Total ownership shares:', totalOwnership.toFixed(3) + '%')
-      }
-    }
-  } else if (state.currentStep === 2) {
-    // Log when Units step is valid
-    console.log('Units step is VALID - Complete Property should be enabled')
+  if (state.currentStep === 2) {
+    const buildingsInfo = state.data.buildings?.map(b => ({
+      address: b.address,
+      hasUnits: !!(b.units && b.units.length > 0),
+      unitCount: b.units?.length || 0
+    }))
+    console.log('Units step validation:', {
+      isValid: isCurrentStepValid,
+      buildings: buildingsInfo,
+      errors: currentStepValidation.errors
+    })
   }
 
   // Fetch incomplete properties on mount and validate localStorage
