@@ -9,6 +9,8 @@ import OnboardingLayout from './OnboardingLayout'
 import PropertyStep from './steps/PropertyStep'
 import BuildingsStep from './steps/BuildingsStep'
 import UnitsStep from './steps/UnitsStep'
+import { OnboardingEntryModal } from './OnboardingEntryModal'
+import { api } from '../../utils/api'
 import type { Step } from '../ui/steps'
 
 export type OnboardingStepId = 'property' | 'buildings' | 'units'
@@ -36,9 +38,74 @@ const onboardingSteps: Step[] = [
 
 const OnboardingFlowContent: React.FC = () => {
   const router = useRouter()
-  const { state, setCurrentStep, validateStep, canNavigateToStep, saveToAPI, resetOnboarding } = useOnboarding()
+  const { state, setCurrentStep, validateStep, canNavigateToStep, saveToAPI, resetOnboarding, updateData } = useOnboarding()
   const { forceSave } = useAutosave({ enabled: true })
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [showEntryModal, setShowEntryModal] = useState(false)
+  const [incompleteProperties, setIncompleteProperties] = useState<any[]>([])
+  const [loadingProperties, setLoadingProperties] = useState(true)
+
+  // Fetch incomplete properties on mount
+  useEffect(() => {
+    fetchIncompleteProperties()
+  }, [])
+
+  const fetchIncompleteProperties = async () => {
+    try {
+      setLoadingProperties(true)
+      const response = await api.get<any[]>('/property')
+      // Filter properties that are between 0-99% complete
+      const incomplete = response.filter(
+        (prop: any) => prop.completionPercentage >= 0 && prop.completionPercentage < 100
+      )
+      setIncompleteProperties(incomplete)
+      // Only show modal if there are incomplete properties
+      if (incomplete.length > 0) {
+        setShowEntryModal(true)
+      }
+    } catch (error) {
+      console.error('Error fetching properties:', error)
+    } finally {
+      setLoadingProperties(false)
+    }
+  }
+
+  const handleCreateNew = () => {
+    resetOnboarding()
+    setShowEntryModal(false)
+  }
+
+  const handleContinueProperty = async (propertyId: string) => {
+    try {
+      // Fetch the property details
+      const property = await api.get(`/property/${propertyId}`)
+      
+      // Load property data into onboarding context
+      updateData({
+        propertyName: property.name,
+        propertyType: property.type,
+        propertyNumber: property.propertyNumber,
+        address: property.address,
+        managementCompany: property.managementCompany,
+        propertyManager: property.propertyManager,
+        accountant: property.accountant,
+        buildings: property.buildings,
+      })
+      
+      // Determine which step to start from based on completion
+      if (property.step1Complete && property.step2Complete) {
+        setCurrentStep(2) // Go to units step
+      } else if (property.step1Complete) {
+        setCurrentStep(1) // Go to buildings step
+      } else {
+        setCurrentStep(0) // Start from beginning
+      }
+      
+      setShowEntryModal(false)
+    } catch (error) {
+      console.error('Error loading property:', error)
+    }
+  }
 
   const handleNext = async () => {
     // Validate current step before proceeding
@@ -81,14 +148,8 @@ const OnboardingFlowContent: React.FC = () => {
   }
 
   const handleCancel = () => {
-    if (state.hasUnsavedChanges) {
-      if (confirm('You have unsaved changes. Are you sure you want to cancel?')) {
-        resetOnboarding()
-        router.push('/')
-      }
-    } else {
-      router.push('/')
-    }
+    // No need for confirmation since we're auto-saving
+    router.push('/')
   }
 
   const renderStepContent = () => {
@@ -107,6 +168,15 @@ const OnboardingFlowContent: React.FC = () => {
 
   return (
     <div>
+      {/* Entry Modal */}
+      <OnboardingEntryModal
+        open={showEntryModal}
+        incompleteProperties={incompleteProperties}
+        loading={loadingProperties}
+        onCreateNew={handleCreateNew}
+        onContinueProperty={handleContinueProperty}
+      />
+
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
         <div className="bg-red-50 border-b border-red-200 px-4 py-3">
