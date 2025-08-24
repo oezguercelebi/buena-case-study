@@ -89,12 +89,27 @@ const BuildingsStep: React.FC = () => {
     updateData({ buildings: updatedBuildings })
   }
 
-  const buildingTypes: { id: BuildingCategory; label: string; desc: string }[] = [
-    { id: 'altbau', label: 'Altbau', desc: 'Pre-war, ~5 floors' },
-    { id: 'neubau', label: 'Neubau', desc: 'Modern, 4-8 floors' },
-    { id: 'hochhaus', label: 'Hochhaus', desc: 'High-rise, 9+ floors' },
-    { id: 'mixed', label: 'Mixed-use', desc: 'Commercial + Residential' }
+  const buildingTypes: { id: BuildingCategory; label: string; desc: string; suggestedFloors: number; suggestedUnitsPerFloor: number; suggestedYear: number }[] = [
+    { id: 'altbau', label: 'Altbau', desc: 'Pre-war, ~5 floors', suggestedFloors: 5, suggestedUnitsPerFloor: 2, suggestedYear: 1900 },
+    { id: 'neubau', label: 'Neubau', desc: 'Modern, 4-8 floors', suggestedFloors: 6, suggestedUnitsPerFloor: 4, suggestedYear: 2020 },
+    { id: 'hochhaus', label: 'Hochhaus', desc: 'High-rise, 9+ floors', suggestedFloors: 12, suggestedUnitsPerFloor: 6, suggestedYear: 1975 },
+    { id: 'mixed', label: 'Mixed-use', desc: 'Commercial + Residential', suggestedFloors: 6, suggestedUnitsPerFloor: 3, suggestedYear: 2010 }
   ]
+
+  // Auto-update form fields when building type is selected
+  useEffect(() => {
+    if (selectedBuildingType && !editingBuilding) {
+      const selectedType = buildingTypes.find(type => type.id === selectedBuildingType)
+      if (selectedType) {
+        setFormData(prev => ({
+          ...prev,
+          floors: selectedType.suggestedFloors,
+          unitsPerFloor: selectedType.suggestedUnitsPerFloor,
+          constructionYear: selectedType.suggestedYear
+        }))
+      }
+    }
+  }, [selectedBuildingType, editingBuilding])
 
   return (
     <div className="space-y-6">
@@ -116,7 +131,7 @@ const BuildingsStep: React.FC = () => {
           size="sm"
           onClick={() => setShowBuildingForm(true)}
         >
-          <Building className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-4 w-4" />
           Add Building
         </Button>
       </div>
