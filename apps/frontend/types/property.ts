@@ -77,6 +77,16 @@ export interface Property {
   metadata?: Record<string, any>
   createdAt: Date
   updatedAt: Date
+  
+  // Progress tracking
+  completed?: boolean
+  completionPercentage?: number
+  
+  // Step completion (for onboarding flow)
+  step1Complete?: boolean
+  step2Complete?: boolean
+  step3Complete?: boolean
+  currentStep?: number
 }
 
 export interface Building {
@@ -144,4 +154,35 @@ export const VALIDATION_RULES = {
     MAX: 50,
   },
   OWNERSHIP_SHARE_TOTAL: 100.000, // For WEG properties
+} as const
+
+// Progress tracking utilities
+export const PROGRESS_UTILS = {
+  getProgressStatus: (percentage?: number): 'not-started' | 'in-progress' | 'completed' => {
+    if (!percentage || percentage === 0) return 'not-started'
+    if (percentage === 100) return 'completed'
+    return 'in-progress'
+  },
+  
+  getProgressColor: (percentage?: number): string => {
+    const status = PROGRESS_UTILS.getProgressStatus(percentage)
+    switch (status) {
+      case 'completed': return 'bg-green-500'
+      case 'in-progress': return 'bg-blue-500'
+      case 'not-started': return 'bg-gray-300'
+    }
+  },
+  
+  getProgressLabel: (percentage?: number): string => {
+    const status = PROGRESS_UTILS.getProgressStatus(percentage)
+    switch (status) {
+      case 'completed': return 'Completed'
+      case 'in-progress': return 'In Progress'
+      case 'not-started': return 'Not Started'
+    }
+  },
+  
+  formatPercentage: (percentage?: number): string => {
+    return `${percentage || 0}%`
+  }
 } as const

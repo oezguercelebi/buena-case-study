@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/ui/dashboard-layout'
 import { Card } from '@/components/ui/card'
-import { Building2, Home, Package, TrendingUp, Loader2 } from 'lucide-react'
+import { PropertyProgress } from '@/components/ui/progress'
+import { Building2, Home, Package, TrendingUp, CheckCircle, Clock, Circle, Loader2 } from 'lucide-react'
 import { api } from '@/utils/api'
 
 interface PropertyStats {
@@ -12,6 +13,10 @@ interface PropertyStats {
   activeProperties: number
   archivedProperties: number
   averageUnitsPerProperty: number
+  completedProperties: number
+  inProgressProperties: number
+  notStartedProperties: number
+  averageCompletionPercentage: number
 }
 
 export default function HomePage() {

@@ -19,20 +19,24 @@ export class PropertyService {
   }
 
   create(createPropertyDto: CreatePropertyDto) {
-    const totalUnits = createPropertyDto.buildings.reduce(
-      (sum, building) => sum + building.units.length,
+    const totalUnits = (createPropertyDto.buildings || []).reduce(
+      (sum, building) => sum + (building.units?.length || 0),
       0
     );
 
-    const property: Property = {
+    let property: Property = {
       id: Date.now().toString(),
       ...createPropertyDto,
+      buildings: createPropertyDto.buildings || [],
       unitCount: totalUnits,
       lastModified: new Date().toISOString(),
       status: 'active',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    
+    // Update progress tracking
+    property = this.updateProgressTracking(property);
     this.properties.push(property);
     return property;
   }
@@ -49,6 +53,14 @@ export class PropertyService {
     const activeProperties = this.properties.filter(p => p.status === 'active').length;
     const archivedProperties = this.properties.filter(p => p.status === 'archived').length;
     
+    // Progress statistics
+    const completedProperties = this.properties.filter(p => p.completed === true).length;
+    const inProgressProperties = this.properties.filter(p => p.completionPercentage && p.completionPercentage > 0 && p.completionPercentage < 100).length;
+    const notStartedProperties = this.properties.filter(p => !p.completionPercentage || p.completionPercentage === 0).length;
+    const averageCompletionPercentage = totalProperties > 0 
+      ? Math.round(this.properties.reduce((sum, p) => sum + (p.completionPercentage || 0), 0) / totalProperties)
+      : 0;
+    
     return {
       totalProperties,
       wegProperties,
@@ -57,6 +69,10 @@ export class PropertyService {
       activeProperties,
       archivedProperties,
       averageUnitsPerProperty: totalProperties > 0 ? Math.round(totalUnits / totalProperties) : 0,
+      completedProperties,
+      inProgressProperties,
+      notStartedProperties,
+      averageCompletionPercentage,
     };
   }
 
@@ -71,19 +87,23 @@ export class PropertyService {
       0
     ) || this.properties[index].unitCount;
 
-    this.properties[index] = {
+    let updatedProperty: Property = {
       ...this.properties[index],
       ...updatePropertyDto,
       unitCount: totalUnits,
       lastModified: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    
+    // Update progress tracking
+    updatedProperty = this.updateProgressTracking(updatedProperty);
+    this.properties[index] = updatedProperty;
     return this.properties[index];
   }
 
   // Create a new property with initial data
   createPropertyWithData(initialData?: Partial<AutosavePropertyDto>): Property {
-    const property: Property = {
+    let property: Property = {
       id: Date.now().toString(),
       name: initialData?.name || '',
       type: initialData?.type || 'WEG',
@@ -104,6 +124,8 @@ export class PropertyService {
       currentStep: initialData?.currentStep || 1,
     };
     
+    // Update progress tracking
+    property = this.updateProgressTracking(property);
     this.properties.push(property);
     return property;
   }
@@ -126,13 +148,17 @@ export class PropertyService {
     }
 
     // Update the property with new data
-    this.properties[index] = {
+    let updatedProperty: Property = {
       ...property,
       ...(data as any),
       unitCount,
       lastModified: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Update progress tracking
+    updatedProperty = this.updateProgressTracking(updatedProperty);
+    this.properties[index] = updatedProperty;
 
     return this.properties[index];
   }
@@ -226,6 +252,69 @@ export class PropertyService {
     });
   }
 
+  // Progress tracking methods
+  private calculateCompletionPercentage(property: Property): number {
+    let completedSections = 0;
+    const totalSections = 3;
+
+    // Section 1: General Information (33%)
+    if (property.name && property.type && property.address) {
+      completedSections++;
+    }
+
+    // Section 2: Buildings (33%) 
+    if (property.buildings && property.buildings.length > 0) {
+      const allBuildingsComplete = property.buildings.every(building => 
+        building.streetName && 
+        building.houseNumber && 
+        building.postalCode && 
+        building.city && 
+        building.buildingType &&
+        building.floors && 
+        building.unitsPerFloor
+      );
+      if (allBuildingsComplete) {
+        completedSections++;
+      }
+    }
+
+    // Section 3: Units (34%)
+    if (property.buildings && property.buildings.length > 0) {
+      const allUnitsComplete = property.buildings.every(building => {
+        if (!building.units || building.units.length === 0) return false;
+        
+        return building.units.every(unit => {
+          const basicComplete = unit.unitNumber && 
+                              unit.type && 
+                              unit.rooms && 
+                              unit.size;
+          
+          if (property.type === 'WEG') {
+            return basicComplete && unit.ownershipShare !== undefined;
+          } else {
+            return basicComplete && unit.rent !== undefined;
+          }
+        });
+      });
+      if (allUnitsComplete) {
+        completedSections++;
+      }
+    }
+
+    return Math.round((completedSections / totalSections) * 100);
+  }
+
+  private updateProgressTracking(property: Property): Property {
+    const completionPercentage = this.calculateCompletionPercentage(property);
+    const completed = completionPercentage === 100;
+
+    return {
+      ...property,
+      completionPercentage,
+      completed,
+    };
+  }
+
   // Delete a property
   deleteProperty(id: string): boolean {
     const index = this.properties.findIndex(property => property.id === id);
@@ -256,6 +345,8 @@ export class PropertyService {
         step2Complete: true,
         step3Complete: true,
         currentStep: 3,
+        completed: true,
+        completionPercentage: 100,
         buildings: [
           {
             streetName: 'Berliner Straße',
@@ -296,6 +387,8 @@ export class PropertyService {
         step2Complete: true,
         step3Complete: true,
         currentStep: 3,
+        completed: true,
+        completionPercentage: 100,
         buildings: [
           {
             streetName: 'Spreeweg',
@@ -355,6 +448,8 @@ export class PropertyService {
         step2Complete: true,
         step3Complete: true,
         currentStep: 3,
+        completed: true,
+        completionPercentage: 100,
         buildings: [
           {
             streetName: 'Kurfürstendamm',

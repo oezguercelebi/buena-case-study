@@ -13,4 +13,8 @@ export interface Property extends CreatePropertyDto {
   step2Complete?: boolean;
   step3Complete?: boolean;
   currentStep?: number;
+  
+  // Overall completion tracking
+  completed?: boolean;
+  completionPercentage?: number;
 }
