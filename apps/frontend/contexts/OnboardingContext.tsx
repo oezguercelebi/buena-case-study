@@ -52,6 +52,7 @@ const initialState: OnboardingState = {
     managementCompany: 'Buena Property Management GmbH',
     propertyManager: 'Max Mustermann',
     accountant: 'jane-smith',
+    address: '', // Initialize address as empty string to prevent validation errors
   },
   currentStep: 0,
   isLoading: false,

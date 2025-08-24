@@ -32,7 +32,7 @@ export interface Property {
   managementCompany?: string;
   propertyManager?: string;
   accountant?: string;
-  address: string;
+  address?: string;
   buildings: Building[];
   unitCount: number;
   lastModified: string;

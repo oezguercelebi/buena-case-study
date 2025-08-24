@@ -181,6 +181,12 @@ export class PropertyValidationService {
     let completedFields = 0;
     let totalFields = 0;
 
+    console.log('validateUnitsStep called with:', {
+      propertyType: data.type,
+      buildingCount: data.buildings?.length || 0,
+      hasBuildings: !!data.buildings
+    });
+
     if (!data.buildings || data.buildings.length === 0) {
       errors.push({ field: 'buildings', message: 'Buildings must be defined before adding units' });
       return { isValid: false, errors, completedFields: 0, totalFields: 1 };
@@ -189,25 +195,36 @@ export class PropertyValidationService {
     let totalUnitsExpected = 0;
     let totalUnitsFound = 0;
     
-    // Check that ALL buildings have at least one unit
+    // Check that ALL buildings have at least one unit (for WEG, this is strict; for MV, we can be more lenient)
     const buildingsWithoutUnits = data.buildings.filter(b => !b.units || b.units.length === 0);
     
-    console.log('validateUnitsStep:', {
+    console.log('validateUnitsStep - detailed check:', {
+      propertyType: data.type,
       totalBuildings: data.buildings.length,
       buildingsWithoutUnits: buildingsWithoutUnits.length,
       buildingDetails: data.buildings.map(b => ({
         id: b.id,
         address: `${b.streetName || ''} ${b.houseNumber || ''}, ${b.postalCode || ''} ${b.city || ''}`.trim(),
         hasUnits: !!(b.units && b.units.length > 0),
-        unitCount: b.units?.length || 0
+        unitCount: b.units?.length || 0,
+        units: b.units?.slice(0, 2).map(u => ({
+          unitNumber: u.unitNumber,
+          type: u.type,
+          floor: u.floor,
+          size: u.size,
+          rooms: u.rooms,
+          rent: u.currentRent !== undefined ? u.currentRent : u.rent,
+          hasRent: u.currentRent !== undefined || u.rent !== undefined
+        }))
       }))
     });
     
-    if (buildingsWithoutUnits.length > 0) {
-      // All buildings must have units for completion
+    // For MV properties, allow completion even if some buildings don't have units yet
+    // For WEG properties, all buildings must have units
+    if (data.type === 'WEG' && buildingsWithoutUnits.length > 0) {
       errors.push({ 
         field: 'units', 
-        message: `All buildings must have at least one unit. ${buildingsWithoutUnits.length} building(s) are missing units.` 
+        message: `All buildings must have at least one unit for WEG properties. ${buildingsWithoutUnits.length} building(s) are missing units.` 
       });
       return { 
         isValid: false, 
@@ -215,13 +232,34 @@ export class PropertyValidationService {
         completedFields: 0, 
         totalFields: data.buildings.length 
       };
+    } else if (data.type === 'MV') {
+      // For MV properties, we need at least one building with units
+      const buildingsWithUnits = data.buildings.filter(b => b.units && b.units.length > 0);
+      if (buildingsWithUnits.length === 0) {
+        errors.push({ 
+          field: 'units', 
+          message: `At least one building must have units for MV properties.` 
+        });
+        return { 
+          isValid: false, 
+          errors, 
+          completedFields: 0, 
+          totalFields: 1 
+        };
+      }
     }
 
     data.buildings.forEach((building, buildingIndex) => {
-      // Validate all buildings since they all must have units
+      // For MV properties, skip validation for buildings without units
+      // For WEG properties, all buildings should have units (enforced above)
       if (!building.units || building.units.length === 0) {
-        // This shouldn't happen due to check above, but keep for safety
-        return;
+        if (data.type === 'WEG') {
+          // This shouldn't happen due to check above, but keep for safety
+          return;
+        } else {
+          // For MV, skip buildings without units
+          return;
+        }
       }
 
       totalUnitsExpected += building.units.length;
@@ -283,8 +321,9 @@ export class PropertyValidationService {
             completedFields++;
           }
         } else if (data.type === 'MV') {
-          // Current Rent
-          if (unit.currentRent === undefined || unit.currentRent < 0) {
+          // Current Rent - check both currentRent and rent fields for compatibility
+          const rentValue = unit.currentRent !== undefined ? unit.currentRent : unit.rent;
+          if (rentValue === undefined || rentValue < 0) {
             errors.push({ 
               field: `buildings[${buildingIndex}].units[${unitIndex}].currentRent`, 
               message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} rent is required for MV properties` 
@@ -335,12 +374,23 @@ export class PropertyValidationService {
       }
     });
 
-    return {
+    const result = {
       isValid: errors.length === 0,
       errors,
       completedFields,
       totalFields
     };
+    
+    console.log('validateUnitsStep FINAL result:', {
+      propertyType: data.type,
+      isValid: result.isValid,
+      errorCount: errors.length,
+      allErrors: errors, // Show ALL errors to debug
+      completedFields,
+      totalFields
+    });
+    
+    return result;
   }
 
   /**

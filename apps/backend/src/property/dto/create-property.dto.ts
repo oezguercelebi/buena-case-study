@@ -264,16 +264,15 @@ export class CreatePropertyDto {
   @MaxLength(100)
   accountant?: string;
 
-  @ApiProperty({ 
+  @ApiPropertyOptional({ 
     description: 'Property address', 
     example: 'Berliner Straße 42, 10115 Berlin',
-    minLength: 5,
     maxLength: 500
   })
+  @IsOptional()
   @IsString()
-  @MinLength(5)
   @MaxLength(500)
-  address!: string;
+  address?: string;
 
   @ApiProperty({ 
     description: 'Buildings that make up this property', 

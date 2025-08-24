@@ -59,12 +59,22 @@ const OnboardingFlowContent: React.FC = () => {
     const buildingsInfo = state.data.buildings?.map(b => ({
       address: `${b.streetName || ''} ${b.houseNumber || ''}, ${b.postalCode || ''} ${b.city || ''}`.trim(),
       hasUnits: !!(b.units && b.units.length > 0),
-      unitCount: b.units?.length || 0
+      unitCount: b.units?.length || 0,
+      units: b.units?.map(u => ({
+        unitNumber: u.unitNumber,
+        type: u.type,
+        rooms: u.rooms,
+        size: u.size,
+        rent: u.currentRent,
+        floor: u.floor
+      }))
     }))
-    console.log('Units step validation:', {
+    console.log('Units step validation for MV property:', {
+      propertyType: state.data.type,
       isValid: isCurrentStepValid,
       buildings: buildingsInfo,
-      errors: currentStepValidation.errors
+      errors: currentStepValidation.errors,
+      validationDetails: currentStepValidation
     })
   }
 
@@ -189,7 +199,9 @@ const OnboardingFlowContent: React.FC = () => {
       
       state.data.buildings?.forEach((building, bIndex) => {
         building.units?.forEach((unit, uIndex) => {
-          if (!unit.type || !validTypes.includes(unit.type)) {
+          // Convert to lowercase for comparison
+          const unitType = unit.type ? unit.type.toLowerCase() : '';
+          if (!unitType || !validTypes.includes(unitType)) {
             invalid.push({
               buildingIndex: bIndex,
               buildingAddress: building.address || `${building.streetName} ${building.houseNumber}`,
