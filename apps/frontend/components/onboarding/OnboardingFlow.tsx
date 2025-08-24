@@ -50,6 +50,12 @@ const OnboardingFlowContent: React.FC = () => {
   // Continuously validate current step to enable/disable continue button
   const currentStepValidation = validateStep(state.currentStep)
   const isCurrentStepValid = currentStepValidation.isValid
+  
+  // Debug validation
+  if (!isCurrentStepValid && state.currentStep === 1) {
+    console.log('Buildings validation failed:', currentStepValidation)
+    console.log('Current buildings data:', state.data.buildings)
+  }
 
   // Fetch incomplete properties on mount and validate localStorage
   useEffect(() => {

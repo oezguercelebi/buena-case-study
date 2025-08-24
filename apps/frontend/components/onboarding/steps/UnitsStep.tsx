@@ -140,11 +140,22 @@ const UnitsStep: React.FC = () => {
       rent: propertyType === 'MV' ? 0 : undefined,
     }
 
-    const updatedUnits = [...units, newUnit].sort((a, b) => {
-      // Sort by floor, then by unit number
-      if (a.floor !== b.floor) return a.floor - b.floor
-      return (a.unitNumber || '').localeCompare(b.unitNumber || '')
+    // Group units by floor
+    const unitsByFloor: { [key: number]: OnboardingUnitData[] } = {}
+    units.forEach(unit => {
+      const floor = unit.floor || 0
+      if (!unitsByFloor[floor]) unitsByFloor[floor] = []
+      unitsByFloor[floor].push(unit)
     })
+
+    // Add new unit to current floor at the end
+    if (!unitsByFloor[currentFloor]) unitsByFloor[currentFloor] = []
+    unitsByFloor[currentFloor].push(newUnit)
+
+    // Flatten back to array, maintaining floor order
+    const updatedUnits = Object.keys(unitsByFloor)
+      .sort((a, b) => Number(a) - Number(b))
+      .flatMap(floor => unitsByFloor[Number(floor)])
 
     const updatedBuilding = { ...selectedBuilding, units: updatedUnits }
     const updatedBuildings = buildings.map(b => 
@@ -507,7 +518,7 @@ const UnitsStep: React.FC = () => {
                 <div className="text-sm text-muted-foreground">
                   <span>Floor avg size: {currentFloorUnits.length > 0 ? Math.round(currentFloorUnits.reduce((sum, u) => sum + (u.size || 0), 0) / currentFloorUnits.length) : 0}m²</span>
                   {propertyType === 'MV' && (
-                    <span className="ml-4">Total rent: €{currentFloorUnits.reduce((sum, u) => sum + (u.rent || 0), 0)}</span>
+                    <span className="ml-4">Floor total rent: €{currentFloorUnits.reduce((sum, u) => sum + (u.rent || 0), 0)}</span>
                   )}
                 </div>
               </div>

@@ -38,7 +38,7 @@ export function useAutosave(options: UseAutosaveOptions = {}) {
 
   // API sync functionality
   const syncToAPI = useCallback(async () => {
-    if (!enabled || !state.data.propertyName || !state.data.propertyType) {
+    if (!enabled || !state.data.name || !state.data.type) {
       return
     }
 
@@ -49,7 +49,7 @@ export function useAutosave(options: UseAutosaveOptions = {}) {
       console.error('Failed to sync to API:', error)
       // Continue with localStorage saving even if API fails
     }
-  }, [enabled, state.data.propertyName, state.data.propertyType, saveToAPI])
+  }, [enabled, state.data.name, state.data.type, saveToAPI])
 
   // Periodic API sync
   const schedulePeriodicAPISync = useCallback(() => {

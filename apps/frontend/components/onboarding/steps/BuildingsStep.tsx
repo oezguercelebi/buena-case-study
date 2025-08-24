@@ -18,6 +18,20 @@ const BuildingsStep: React.FC = () => {
   // Initialize buildings from context
   const buildings = state.data.buildings || []
   
+  // Helper to ensure all buildings have addresses (for validation)
+  React.useEffect(() => {
+    const needsUpdate = buildings.some(b => !b.address && b.streetName && b.houseNumber)
+    if (needsUpdate) {
+      const updatedBuildings = buildings.map(b => ({
+        ...b,
+        address: b.address || (b.streetName && b.houseNumber && b.postalCode && b.city 
+          ? `${b.streetName} ${b.houseNumber}, ${b.postalCode} ${b.city}`
+          : b.address || '')
+      }))
+      updateData({ buildings: updatedBuildings })
+    }
+  }, []) // Only run once on mount
+  
   // Form state
   const [formData, setFormData] = useState({
     streetName: '',
@@ -60,6 +74,12 @@ const BuildingsStep: React.FC = () => {
     }
 
     // Update context
+    console.log('Saving buildings with addresses:', updatedBuildings.map(b => ({
+      id: b.id,
+      address: b.address,
+      streetName: b.streetName,
+      houseNumber: b.houseNumber
+    })))
     updateData({ buildings: updatedBuildings })
 
     // Reset form

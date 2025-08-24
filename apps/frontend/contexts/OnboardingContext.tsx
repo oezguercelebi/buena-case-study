@@ -106,7 +106,12 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const updateData = useCallback((updates: Partial<OnboardingPropertyData>) => {
     const updatedData = { ...updates, lastModified: new Date() }
     dispatch({ type: 'SET_DATA', payload: updatedData })
-  }, [])
+    // Ensure property ID is preserved
+    const currentPropertyId = state.propertyId || localStorage.getItem(STORAGE_KEYS.PROPERTY_ID)
+    if (currentPropertyId && !state.propertyId) {
+      dispatch({ type: 'SET_PROPERTY_ID', payload: currentPropertyId })
+    }
+  }, [state.propertyId])
 
   const setCurrentStep = useCallback((step: number) => {
     dispatch({ type: 'SET_CURRENT_STEP', payload: step })
@@ -181,6 +186,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       throw new Error('Missing required property information')
     }
 
+    console.log('Saving to API with propertyId:', state.propertyId)
     dispatch({ type: 'SET_SAVING', payload: true })
     
     try {
@@ -204,6 +210,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       if (state.propertyId) {
         // Update existing property using autosave endpoint
         response = await api.patch(`/property/${state.propertyId}/autosave`, propertyData)
+        // Ensure we maintain the property ID
+        if (response && response.id && response.id !== state.propertyId) {
+          console.warn('Property ID mismatch after update:', { expected: state.propertyId, received: response.id })
+        }
       } else {
         // Create new property
         response = await api.post('/property', propertyData)
