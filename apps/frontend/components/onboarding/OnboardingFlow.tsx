@@ -10,6 +10,7 @@ import PropertyStep from './steps/PropertyStep'
 import BuildingsStep from './steps/BuildingsStep'
 import UnitsStep from './steps/UnitsStep'
 import { OnboardingEntryModal } from './OnboardingEntryModal'
+import { UnitTypeValidationModal } from './UnitTypeValidationModal'
 import { api } from '../../utils/api'
 import { STORAGE_KEYS } from '../../types/property'
 import type { Step } from '../ui/steps'
@@ -46,6 +47,8 @@ const OnboardingFlowContent: React.FC = () => {
   const [showEntryModal, setShowEntryModal] = useState(false)
   const [incompleteProperties, setIncompleteProperties] = useState<any[]>([])
   const [loadingProperties, setLoadingProperties] = useState(true)
+  const [showTypeValidation, setShowTypeValidation] = useState(false)
+  const [invalidUnits, setInvalidUnits] = useState<any[]>([])
   
   // Continuously validate current step to enable/disable continue button
   const currentStepValidation = validateStep(state.currentStep)
@@ -179,6 +182,32 @@ const OnboardingFlowContent: React.FC = () => {
 
     setValidationErrors([])
 
+    // Check for invalid unit types before completing
+    if (state.currentStep === onboardingSteps.length - 1) {
+      const validTypes = ['apartment', 'office', 'parking', 'storage', 'commercial']
+      const invalid: any[] = []
+      
+      state.data.buildings?.forEach((building, bIndex) => {
+        building.units?.forEach((unit, uIndex) => {
+          if (!unit.type || !validTypes.includes(unit.type)) {
+            invalid.push({
+              buildingIndex: bIndex,
+              buildingAddress: building.address || `${building.streetName} ${building.houseNumber}`,
+              unitIndex: uIndex,
+              unitNumber: unit.unitNumber,
+              currentType: unit.type
+            })
+          }
+        })
+      })
+      
+      if (invalid.length > 0) {
+        setInvalidUnits(invalid)
+        setShowTypeValidation(true)
+        return
+      }
+    }
+
     if (state.currentStep < onboardingSteps.length - 1) {
       setCurrentStep(state.currentStep + 1)
       forceSave() // Force save on step navigation
@@ -216,6 +245,27 @@ const OnboardingFlowContent: React.FC = () => {
   const handleCancel = () => {
     // No need for confirmation since we're auto-saving
     router.push('/')
+  }
+  
+  const handleFixUnitTypes = (fixes: Record<string, string>) => {
+    // Apply the fixes to the units
+    const updatedBuildings = state.data.buildings?.map((building, bIndex) => ({
+      ...building,
+      units: building.units?.map((unit, uIndex) => {
+        const key = `${bIndex}-${uIndex}`
+        if (fixes[key]) {
+          return { ...unit, type: fixes[key] as any }
+        }
+        return unit
+      })
+    }))
+    
+    updateData({ buildings: updatedBuildings })
+    setShowTypeValidation(false)
+    setInvalidUnits([])
+    
+    // Try to continue after fixing
+    setTimeout(() => handleNext(), 100)
   }
 
   const renderStepContent = () => {
@@ -261,6 +311,14 @@ const OnboardingFlowContent: React.FC = () => {
       >
         {renderStepContent()}
       </OnboardingLayout>
+      
+      {/* Unit Type Validation Modal */}
+      <UnitTypeValidationModal
+        open={showTypeValidation}
+        invalidUnits={invalidUnits}
+        onFix={handleFixUnitTypes}
+        onCancel={() => setShowTypeValidation(false)}
+      />
     </div>
   )
 }

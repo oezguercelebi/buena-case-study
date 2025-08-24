@@ -10,6 +10,9 @@ export const api = {
   },
 
   async post<T>(endpoint: string, data: any): Promise<T> {
+    console.log('POST request to:', `${API_BASE_URL}${endpoint}`)
+    console.log('POST data:', JSON.stringify(data, null, 2))
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -17,8 +20,11 @@ export const api = {
       },
       body: JSON.stringify(data),
     })
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      const errorText = await response.text()
+      console.error('POST error response:', errorText)
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
     }
     return response.json()
   },
@@ -38,6 +44,9 @@ export const api = {
   },
 
   async patch<T>(endpoint: string, data: any): Promise<T> {
+    console.log('PATCH request to:', `${API_BASE_URL}${endpoint}`)
+    console.log('PATCH data:', JSON.stringify(data, null, 2))
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PATCH',
       headers: {
@@ -45,8 +54,11 @@ export const api = {
       },
       body: JSON.stringify(data),
     })
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      const errorText = await response.text()
+      console.error('PATCH error response:', errorText)
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
     }
     return response.json()
   },

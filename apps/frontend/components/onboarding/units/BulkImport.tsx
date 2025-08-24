@@ -110,7 +110,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({
     }))
   }
 
-  const generatePreview = () => {
+  const generateUnitsFromCSV = (): OnboardingUnitData[] => {
     const units: OnboardingUnitData[] = []
     
     csvData.forEach((row, rowIndex) => {
@@ -127,7 +127,8 @@ export const BulkImport: React.FC<BulkImportProps> = ({
           if (fieldConfig?.type === 'number') {
             unit[field as keyof OnboardingUnitData] = typeof value === 'number' ? value : parseFloat(value as string) || 0
           } else {
-            unit[field as keyof OnboardingUnitData] = value as any
+            // Ensure string values are converted to strings
+            unit[field as keyof OnboardingUnitData] = String(value) as any
           }
         }
       })
@@ -150,14 +151,18 @@ export const BulkImport: React.FC<BulkImportProps> = ({
       units.push(unit as OnboardingUnitData)
     })
 
+    return units
+  }
+
+  const updatePreview = () => {
+    const units = generateUnitsFromCSV()
     setPreviewData(units)
   }
 
   const handleImport = () => {
-    if (previewData.length === 0) {
-      generatePreview()
-    }
-    onImport(previewData)
+    // Generate fresh data for import
+    const unitsToImport = previewData.length > 0 ? previewData : generateUnitsFromCSV()
+    onImport(unitsToImport)
     onClose()
   }
 
@@ -249,7 +254,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-medium">Preview (first 5 units)</h3>
-                  <Button size="sm" onClick={generatePreview}>
+                  <Button size="sm" onClick={updatePreview}>
                     Update Preview
                   </Button>
                 </div>
