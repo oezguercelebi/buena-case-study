@@ -159,6 +159,15 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
       if (savedData) {
         const parsedData: OnboardingPropertyData = JSON.parse(savedData)
+        
+        // Ensure all buildings have IDs
+        if (parsedData.buildings) {
+          parsedData.buildings = parsedData.buildings.map(b => ({
+            ...b,
+            id: b.id || `building-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          }))
+        }
+        
         const currentStep = savedStep ? parseInt(savedStep, 10) : 0
         const lastSavedDate = lastSaved ? new Date(lastSaved) : null
 
@@ -186,7 +195,6 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       throw new Error('Missing required property information')
     }
 
-    console.log('Saving to API with propertyId:', state.propertyId)
     dispatch({ type: 'SET_SAVING', payload: true })
     
     try {

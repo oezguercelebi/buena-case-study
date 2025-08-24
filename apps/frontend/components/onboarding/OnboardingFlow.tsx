@@ -54,6 +54,7 @@ const OnboardingFlowContent: React.FC = () => {
   // Debug validation
   if (!isCurrentStepValid && state.currentStep === 1) {
     console.log('Buildings validation failed:', currentStepValidation)
+    console.log('Validation errors:', currentStepValidation.errors)
     console.log('Current buildings data:', state.data.buildings)
   }
 

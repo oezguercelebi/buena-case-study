@@ -14,9 +14,30 @@ const UnitsStep: React.FC = () => {
   const buildings = state.data.buildings || []
   const propertyType = state.data.type || 'WEG'
   
-  const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildings[0]?.id || '')
-  const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
+  // Initialize with first building if available
+  const initialBuildingId = buildings.length > 0 && buildings[0]?.id ? buildings[0].id : ''
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string>(initialBuildingId)
+  
+  console.log('UnitsStep - Buildings:', buildings.map(b => ({ id: b.id, address: b.address })))
+  console.log('UnitsStep - Selected building ID:', selectedBuildingId, 'Initial:', initialBuildingId)
+  
+  const selectedBuilding = buildings.find(b => b.id === selectedBuildingId) || buildings[0]
   const [currentFloor, setCurrentFloor] = useState(selectedBuilding?.startingFloor ?? 0)
+  
+  // Update selected building if buildings change and current selection is invalid
+  useEffect(() => {
+    if (selectedBuildingId && !buildings.find(b => b.id === selectedBuildingId)) {
+      // Current selection no longer exists, select first building
+      if (buildings.length > 0 && buildings[0]?.id) {
+        setSelectedBuildingId(buildings[0].id)
+        setCurrentFloor(buildings[0].startingFloor ?? 0)
+      }
+    } else if (!selectedBuildingId && buildings.length > 0 && buildings[0]?.id) {
+      // No selection but buildings exist, select first
+      setSelectedBuildingId(buildings[0].id)
+      setCurrentFloor(buildings[0].startingFloor ?? 0)
+    }
+  }, [buildings, selectedBuildingId])
   
   // Simple pattern configuration
   const [patternConfig, setPatternConfig] = useState({
@@ -208,7 +229,7 @@ const UnitsStep: React.FC = () => {
                 
                 return (
                   <button
-                    key={building.id}
+                    key={building.id || `building-${buildings.indexOf(building)}`}
                     className={`relative px-4 py-3 text-sm font-medium transition-all cursor-pointer ${
                       isActive 
                         ? 'text-foreground' 
@@ -241,8 +262,8 @@ const UnitsStep: React.FC = () => {
         </div>
       )}
 
-      {/* Building Info - Only show for single building */}
-      {selectedBuilding && buildings.length === 1 && (
+      {/* Building Info - Show for single building or when tabs are not shown */}
+      {selectedBuilding && (buildings.length === 1 || !buildings.length) && (
         <Card className="p-4 bg-muted/20 border-muted">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
