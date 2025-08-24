@@ -134,6 +134,12 @@ const OnboardingFlowContent: React.FC = () => {
       // Set the property ID in context to enable updates instead of creates
       setPropertyId(propertyId)
       
+      // Ensure all buildings have IDs before loading
+      const buildings = (property.buildings || []).map((b: any, index: number) => ({
+        ...b,
+        id: b.id || `building-${propertyId}-${index}-${Date.now()}`
+      }))
+      
       // Load property data into onboarding context
       updateData({
         name: property.name,
@@ -143,7 +149,7 @@ const OnboardingFlowContent: React.FC = () => {
         managementCompany: property.managementCompany,
         propertyManager: property.propertyManager,
         accountant: property.accountant,
-        buildings: property.buildings,
+        buildings,
       })
       
       // Always start from the beginning to allow reviewing/editing all steps
