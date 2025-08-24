@@ -10,7 +10,7 @@ const PropertyStep: React.FC = () => {
   
   // Local state for UI interaction
   const [selectedPropertyType, setSelectedPropertyType] = useState<PropertyType | null>(
-    state.data.propertyType || null
+    state.data.type || null
   )
   const [uploadedFile, setUploadedFile] = useState<File | null>(
     state.data.uploadedDocument || null
@@ -18,21 +18,21 @@ const PropertyStep: React.FC = () => {
 
   // Sync local state with context when component mounts
   useEffect(() => {
-    if (state.data.propertyType && !selectedPropertyType) {
-      setSelectedPropertyType(state.data.propertyType)
+    if (state.data.type && !selectedPropertyType) {
+      setSelectedPropertyType(state.data.type)
     }
     if (state.data.uploadedDocument && !uploadedFile) {
       setUploadedFile(state.data.uploadedDocument)
     }
-  }, [state.data.propertyType, state.data.uploadedDocument, selectedPropertyType, uploadedFile])
+  }, [state.data.type, state.data.uploadedDocument, selectedPropertyType, uploadedFile])
 
   // Handle property type selection
   const handlePropertyTypeSelection = (type: PropertyType) => {
     setSelectedPropertyType(type)
     updateData({ 
-      propertyType: type,
+      type: type,
       // Set smart defaults based on property type
-      propertyName: type === 'WEG' ? '' : '', // Will be filled with smart suggestions
+      name: type === 'WEG' ? '' : '', // Will be filled with smart suggestions
       aiExtractionEnabled: true,
     })
   }
@@ -209,8 +209,8 @@ const PropertyStep: React.FC = () => {
               type="text"
               className="w-full h-9 px-3 rounded-md border bg-white"
               placeholder={selectedPropertyType === 'WEG' ? 'e.g., Hauptstraße 123 WEG' : 'e.g., Hauptstraße 123'}
-              value={state.data.propertyName || ''}
-              onChange={(e) => handleFieldChange('propertyName', e.target.value)}
+              value={state.data.name || ''}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
             />
           </div>
           <div className="space-y-2">

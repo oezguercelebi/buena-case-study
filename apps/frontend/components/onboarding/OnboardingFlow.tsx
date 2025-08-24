@@ -82,8 +82,8 @@ const OnboardingFlowContent: React.FC = () => {
       
       // Load property data into onboarding context
       updateData({
-        propertyName: property.name,
-        propertyType: property.type,
+        name: property.name,
+        type: property.type,
         propertyNumber: property.propertyNumber,
         address: property.address,
         managementCompany: property.managementCompany,

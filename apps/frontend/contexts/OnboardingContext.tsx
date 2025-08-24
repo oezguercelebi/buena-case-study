@@ -152,7 +152,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const saveToAPI = useCallback(async () => {
-    if (!state.data.propertyName || !state.data.propertyType) {
+    if (!state.data.name || !state.data.type) {
       throw new Error('Missing required property information')
     }
 
@@ -161,17 +161,18 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     try {
       // Transform onboarding data to API format
       const propertyData = {
-        name: state.data.propertyName,
-        type: state.data.propertyType,
+        name: state.data.name,
+        type: state.data.type,
         propertyNumber: state.data.propertyNumber || `PROP-${Date.now()}`,
         managementCompany: state.data.managementCompany,
         propertyManager: state.data.propertyManager,
         accountant: state.data.accountant,
+        address: state.data.address,
         buildings: state.data.buildings || [],
         status: 'active', // Save as active property, not draft
       }
 
-      await api.post('/properties', propertyData)
+      await api.post('/property', propertyData)
       
       // Clear localStorage after successful save
       localStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA)
@@ -227,7 +228,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
   // Auto-save property to API when data changes
   useEffect(() => {
-    if (state.hasUnsavedChanges && state.data.propertyName && state.data.propertyType) {
+    if (state.hasUnsavedChanges && state.data.name && state.data.type) {
       const timeoutId = setTimeout(async () => {
         try {
           await saveToAPI()
