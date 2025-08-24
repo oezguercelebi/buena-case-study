@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/ui/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { PropertyProgress, ProgressBadge } from "@/components/ui/progress"
-import { Plus, Building2, MapPin, Home, Loader2 } from "lucide-react"
+import { Plus, Building2, MapPin, Home, Loader2, Trash2, Pencil } from "lucide-react"
 import Link from "next/link"
 import { api } from "@/utils/api"
 
@@ -28,6 +28,7 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchProperties()
@@ -43,6 +44,24 @@ export default function PropertiesPage() {
       console.error('Error fetching properties:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDelete = async (propertyId: string) => {
+    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+      return
+    }
+
+    setDeletingId(propertyId)
+    try {
+      await api.delete(`/property/${propertyId}`)
+      // Remove the property from the list
+      setProperties(prev => prev.filter(p => p.id !== propertyId))
+    } catch (err) {
+      console.error('Error deleting property:', err)
+      alert('Failed to delete property. Please try again.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -152,12 +171,30 @@ export default function PropertiesPage() {
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    View
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Edit
-                  </Button>
+                  {property.completed ? (
+                    <>
+                      <Button variant="outline" size="sm">
+                        View
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDelete(property.id)}
+                      disabled={deletingId === property.id}
+                      className="hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      {deletingId === property.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
