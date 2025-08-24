@@ -1,6 +1,6 @@
 # Buena Case Study
 
-A modern property management web application built with Next.js and NestJS in a monorepo structure.
+A modern property management web application built with Next.js and NestJS in a monorepo structure. Features include property onboarding, building and unit management, and support for bulk data import.
 
 ## 🚀 Quick Start
 
@@ -126,6 +126,15 @@ Base URL: `http://localhost:3001`
   ]
 }
 ```
+
+### 📊 Sample Data for Bulk Import
+
+The application includes sample data generation for testing bulk import functionality. When creating properties through the onboarding flow, you can:
+
+- Add multiple buildings with many units
+- Generate sample units automatically
+- Test with 60+ units for performance validation
+- Support both WEG (ownership) and MV (rental) property types
 
 ## 🏗 Architecture Decisions
 
