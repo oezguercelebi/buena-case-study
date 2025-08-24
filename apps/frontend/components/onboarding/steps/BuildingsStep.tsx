@@ -291,6 +291,10 @@ const BuildingsStep: React.FC = () => {
                   value={formData.startingFloor}
                   onChange={(e) => setFormData({ ...formData, startingFloor: parseInt(e.target.value) })}
                 >
+                  <option value="-5">-5 (Sub-basement 5)</option>
+                  <option value="-4">-4 (Sub-basement 4)</option>
+                  <option value="-3">-3 (Sub-basement 3)</option>
+                  <option value="-2">-2 (Sub-basement 2)</option>
                   <option value="-1">-1 (Basement)</option>
                   <option value="0">0 (Ground/EG)</option>
                   <option value="1">1 (First)</option>
