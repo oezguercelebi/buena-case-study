@@ -36,6 +36,7 @@ const BuildingsStep: React.FC = () => {
       houseNumber: formData.houseNumber,
       postalCode: formData.postalCode,
       city: formData.city,
+      address: `${formData.streetName} ${formData.houseNumber}, ${formData.postalCode} ${formData.city}`,
       buildingType: selectedBuildingType || 'neubau',
       floors: formData.floors,
       unitsPerFloor: formData.unitsPerFloor,
@@ -71,11 +72,31 @@ const BuildingsStep: React.FC = () => {
 
   const handleEditBuilding = (building: OnboardingBuildingData) => {
     setEditingBuilding(building)
+    // Parse address back into components if available
+    let streetName = building.streetName || ''
+    let houseNumber = building.houseNumber || ''
+    let postalCode = building.postalCode || ''
+    let city = building.city || ''
+    
+    // If individual fields are not available but address is, try to parse it
+    if (building.address && (!streetName || !houseNumber)) {
+      // This is a simple fallback, ideally the individual fields should be stored
+      const addressParts = building.address.split(',')
+      if (addressParts.length >= 2) {
+        const streetParts = addressParts[0].trim().split(' ')
+        houseNumber = streetParts.pop() || ''
+        streetName = streetParts.join(' ')
+        const cityParts = addressParts[1].trim().split(' ')
+        postalCode = cityParts[0] || ''
+        city = cityParts.slice(1).join(' ')
+      }
+    }
+    
     setFormData({
-      streetName: building.streetName || '',
-      houseNumber: building.houseNumber || '',
-      postalCode: building.postalCode || '',
-      city: building.city || '',
+      streetName,
+      houseNumber,
+      postalCode,
+      city,
       floors: building.floors || 6,
       unitsPerFloor: building.unitsPerFloor || 4,
       constructionYear: building.constructionYear || 2020

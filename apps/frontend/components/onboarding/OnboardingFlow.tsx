@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { Home, Building2, Package, AlertCircle } from 'lucide-react'
+import { Home, Building2, Package } from 'lucide-react'
 import { OnboardingProvider, useOnboarding } from '../../contexts/OnboardingContext'
 import { useAutosave } from '../../hooks/useAutosave'
 import OnboardingLayout from './OnboardingLayout'
@@ -46,6 +46,10 @@ const OnboardingFlowContent: React.FC = () => {
   const [showEntryModal, setShowEntryModal] = useState(false)
   const [incompleteProperties, setIncompleteProperties] = useState<any[]>([])
   const [loadingProperties, setLoadingProperties] = useState(true)
+  
+  // Continuously validate current step to enable/disable continue button
+  const currentStepValidation = validateStep(state.currentStep)
+  const isCurrentStepValid = currentStepValidation.isValid
 
   // Fetch incomplete properties on mount and validate localStorage
   useEffect(() => {
@@ -118,7 +122,7 @@ const OnboardingFlowContent: React.FC = () => {
       resetOnboarding()
       
       // Fetch the property details
-      const property = await api.get(`/property/${propertyId}`)
+      const property = await api.get<any>(`/property/${propertyId}`)
       
       // Set the property ID in context to enable updates instead of creates
       setPropertyId(propertyId)
@@ -232,7 +236,8 @@ const OnboardingFlowContent: React.FC = () => {
         isSaving={state.isSaving}
         lastSavedTime={state.lastSaved}
         canNavigateToStep={canNavigateToStep}
-        validationErrors={validationErrors}
+        validationErrors={validationErrors.map(e => e.message)}
+        isCurrentStepValid={isCurrentStepValid}
       >
         {renderStepContent()}
       </OnboardingLayout>

@@ -12,9 +12,11 @@ interface OnboardingLayoutProps {
   isFirstStep: boolean
   isLastStep: boolean
   autoSaved: boolean
+  isSaving: boolean
   lastSavedTime: Date | null
   canNavigateToStep?: (stepIndex: number) => boolean
   validationErrors?: string[]
+  isCurrentStepValid?: boolean
   children: React.ReactNode
 }
 
@@ -28,9 +30,11 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   isFirstStep,
   isLastStep,
   autoSaved,
+  isSaving,
   lastSavedTime,
   canNavigateToStep,
   validationErrors = [],
+  isCurrentStepValid = true,
   children,
 }) => {
   return (
@@ -64,7 +68,12 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
             {/* Right side - Auto-save indicator */}
             <div className="flex-shrink-0 w-20">
               <div className="flex items-center justify-end gap-1.5 text-xs">
-                {autoSaved ? (
+                {isSaving ? (
+                  <>
+                    <Save className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+                    <span className="text-amber-500">Saving...</span>
+                  </>
+                ) : autoSaved ? (
                   <>
                     <Check className="h-3.5 w-3.5 text-green-500" />
                     <span className="text-green-500">Saved</span>
@@ -102,7 +111,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <button
-              className="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center cursor-pointer"
               onClick={onPrevious}
               disabled={isFirstStep}
             >
@@ -111,9 +120,9 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
             </button>
 
             <button
-              className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center cursor-pointer"
               onClick={onNext}
-              disabled={validationErrors.length > 0}
+              disabled={!isCurrentStepValid}
             >
               {isLastStep ? 'Complete Property' : 'Continue'}
               <ChevronRight className="ml-2 h-4 w-4" />

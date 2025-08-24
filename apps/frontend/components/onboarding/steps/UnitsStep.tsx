@@ -593,7 +593,7 @@ const UnitsStep: React.FC = () => {
               <div className="flex items-center justify-between p-3 bg-muted rounded-md">
                 <p className="text-sm">Total Share Distribution:</p>
                 <p className="font-mono font-medium">
-                  {units.reduce((sum, u) => sum + (u.ownershipShare || 0), 0).toFixed(3)}%
+                  {building.units.reduce((sum, u) => sum + (u.ownershipShare || 0), 0).toFixed(3)}%
                 </p>
               </div>
             </div>
