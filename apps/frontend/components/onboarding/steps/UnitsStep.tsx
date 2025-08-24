@@ -7,7 +7,6 @@ import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
-import VirtualizedUnitsTable from '../../ui/VirtualizedUnitsTable'
 import { useOnboarding } from '../../../contexts/OnboardingContext'
 import { OnboardingUnitData, UnitType } from '../../../types/property'
 
@@ -181,11 +180,13 @@ const UnitsStep: React.FC = memo(() => {
     updateData({ buildings: updatedBuildings })
   }, [selectedBuilding, selectedBuildingId, buildings, units, updateData])
 
-  const handleBulkImport = useCallback((importedUnits: OnboardingUnitData[]) => {
+  const handleBulkImport = useCallback((importedUnits: OnboardingUnitData[], mode: 'append' | 'replace') => {
     if (!selectedBuilding) return
 
-    // Merge imported units with existing units
-    const allUnits = [...units, ...importedUnits]
+    // Either merge with existing units or replace them based on mode
+    const allUnits = mode === 'append' 
+      ? [...units, ...importedUnits]
+      : importedUnits
     
     // Auto-adjust building floors based on imported units
     const floors = allUnits.map(u => u.floor).filter(f => f !== undefined) as number[]
@@ -282,7 +283,6 @@ const UnitsStep: React.FC = memo(() => {
   )
   
   // Detect if we need virtual scrolling (60+ units)
-  const shouldUseVirtualScrolling = useMemo(() => units.length >= 60, [units.length])
 
   if (buildings.length === 0) {
     return (
@@ -552,30 +552,8 @@ const UnitsStep: React.FC = memo(() => {
                 </div>
               </div>
 
-              {/* Conditional rendering: Virtual scrolling for 60+ units, regular table for smaller datasets */}
-              {shouldUseVirtualScrolling ? (
-                <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground bg-blue-50 border border-blue-200 rounded p-3">
-                    <div className="flex items-center gap-2">
-                      <Info className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium text-blue-800">Performance Mode Active</span>
-                    </div>
-                    <p className="mt-1 text-blue-700">
-                      Virtual scrolling enabled for {units.length} units. All units from all floors are shown in one optimized view.
-                    </p>
-                  </div>
-                  <VirtualizedUnitsTable
-                    units={units}
-                    propertyType={propertyType}
-                    onUpdateUnit={updateUnit}
-                    onDeleteUnit={deleteUnit}
-                    height={500}
-                    className="w-full"
-                  />
-                </div>
-              ) : (
-                /* Regular table view for smaller datasets */
-                <div className="overflow-x-auto">
+              {/* Units table for current floor */}
+              <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b">
@@ -673,8 +651,7 @@ const UnitsStep: React.FC = memo(() => {
                       ))}
                     </tbody>
                   </table>
-                </div>
-              )}
+              </div>
 
               {/* Add Unit Button */}
               <div className="flex items-center justify-between pt-2">
@@ -732,6 +709,7 @@ const UnitsStep: React.FC = memo(() => {
         <BulkImport
           buildingId={selectedBuildingId}
           propertyType={propertyType as 'WEG' | 'MV'}
+          existingUnitsCount={units.length}
           onImport={handleBulkImport}
           onClose={() => setShowBulkImport(false)}
         />

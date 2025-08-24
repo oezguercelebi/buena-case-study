@@ -11,7 +11,8 @@ import { TypeMappingModal } from './TypeMappingModal'
 interface BulkImportProps {
   buildingId: string
   propertyType: 'WEG' | 'MV'
-  onImport: (units: OnboardingUnitData[]) => void
+  existingUnitsCount: number
+  onImport: (units: OnboardingUnitData[], mode: 'append' | 'replace') => void
   onClose: () => void
 }
 
@@ -33,6 +34,7 @@ const availableUnitFields = [
 export const BulkImport: React.FC<BulkImportProps> = ({
   buildingId,
   propertyType,
+  existingUnitsCount,
   onImport,
   onClose
 }) => {
@@ -43,6 +45,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({
   const [showTypeMapping, setShowTypeMapping] = useState(false)
   const [typeColumnIndex, setTypeColumnIndex] = useState<number | null>(null)
   const [typeValueMapping, setTypeValueMapping] = useState<Record<string, string>>({})
+  const [importMode, setImportMode] = useState<'append' | 'replace'>(existingUnitsCount > 0 ? 'append' : 'replace')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,7 +200,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({
   const handleImport = () => {
     // Generate fresh data for import
     const unitsToImport = previewData.length > 0 ? previewData : generateUnitsFromCSV()
-    onImport(unitsToImport)
+    onImport(unitsToImport, importMode)
     onClose()
   }
 
@@ -267,6 +270,44 @@ export const BulkImport: React.FC<BulkImportProps> = ({
             </div>
           ) : (
             <div className="space-y-6">
+              {/* Import Mode Selection - Only show if there are existing units */}
+              {existingUnitsCount > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h3 className="font-medium mb-3 text-amber-900">Import Mode</h3>
+                  <p className="text-sm text-amber-800 mb-3">You have {existingUnitsCount} existing unit{existingUnitsCount !== 1 ? 's' : ''} in this building</p>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="append"
+                        checked={importMode === 'append'}
+                        onChange={(e) => setImportMode(e.target.value as 'append' | 'replace')}
+                        className="w-4 h-4"
+                      />
+                      <div>
+                        <span className="font-medium text-sm">Add to existing units</span>
+                        <p className="text-xs text-muted-foreground">Keep current units and add the imported ones</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="replace"
+                        checked={importMode === 'replace'}
+                        onChange={(e) => setImportMode(e.target.value as 'append' | 'replace')}
+                        className="w-4 h-4"
+                      />
+                      <div>
+                        <span className="font-medium text-sm text-red-700">Replace all units</span>
+                        <p className="text-xs text-red-600">⚠️ This will remove all existing units for this building</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
               {/* Column Mapping */}
               <div>
                 <h3 className="font-medium mb-3">Map CSV columns to unit fields</h3>
