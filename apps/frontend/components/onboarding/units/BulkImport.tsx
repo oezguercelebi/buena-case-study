@@ -201,9 +201,13 @@ export const BulkImport: React.FC<BulkImportProps> = ({
     onClose()
   }
 
-  const filteredFields = availableUnitFields.filter(field => 
-    !field.onlyFor || field.onlyFor === propertyType
-  )
+  const filteredFields = availableUnitFields.filter(field => {
+    // Skip fields that are specific to a different property type
+    if (field.onlyFor && field.onlyFor !== propertyType) {
+      return false
+    }
+    return true
+  })
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -245,9 +249,19 @@ export const BulkImport: React.FC<BulkImportProps> = ({
               <div className="bg-muted/50 rounded-lg p-4">
                 <p className="text-sm font-medium mb-2">Expected format:</p>
                 <div className="text-xs font-mono bg-background rounded p-2">
-                  <div>Unit,Floor,Rooms,Size{propertyType === 'WEG' ? ',Share' : ',Rent'}</div>
-                  <div>101,1,2,65{propertyType === 'WEG' ? ',1.5' : ',850'}</div>
-                  <div>102,1,3,85{propertyType === 'WEG' ? ',2.0' : ',1100'}</div>
+                  {propertyType === 'WEG' ? (
+                    <>
+                      <div>Unit,Floor,Rooms,Size,Share</div>
+                      <div>101,1,2,65,1.5</div>
+                      <div>102,1,3,85,2.0</div>
+                    </>
+                  ) : (
+                    <>
+                      <div>Unit,Floor,Rooms,Size,Rent</div>
+                      <div>101,1,2,65,850</div>
+                      <div>102,1,3,85,1100</div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -301,8 +315,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({
                         <th className="text-left p-2">Floor</th>
                         <th className="text-left p-2">Rooms</th>
                         <th className="text-left p-2">Size</th>
-                        {propertyType === 'WEG' && <th className="text-left p-2">Share</th>}
-                        {propertyType === 'MV' && <th className="text-left p-2">Rent</th>}
+                        <th className="text-left p-2">{propertyType === 'WEG' ? 'Share' : 'Rent'}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -314,8 +327,12 @@ export const BulkImport: React.FC<BulkImportProps> = ({
                           <td className="p-2">{unit.floor ?? '-'}</td>
                           <td className="p-2">{unit.rooms || '-'}</td>
                           <td className="p-2">{unit.size || '-'}m²</td>
-                          {propertyType === 'WEG' && <td className="p-2">{unit.ownershipShare || '-'}%</td>}
-                          {propertyType === 'MV' && <td className="p-2">€{unit.rent || '-'}</td>}
+                          <td className="p-2">
+                            {propertyType === 'WEG' 
+                              ? `${unit.ownershipShare || '-'}%`
+                              : `€${unit.rent || '-'}`
+                            }
+                          </td>
                         </tr>
                       ))}
                     </tbody>
