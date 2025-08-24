@@ -221,6 +221,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) =>
             <label className="text-sm font-medium">Property Name *</label>
             <input
               type="text"
+              autoComplete="off"
               className={`w-full h-9 px-3 rounded-md border bg-white ${getFieldError('name') ? 'border-red-500' : ''}`}
               placeholder={selectedPropertyType === 'WEG' ? 'e.g., Hauptstraße 123 WEG' : 'e.g., Hauptstraße 123'}
               value={state.data.name || ''}
@@ -234,6 +235,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) =>
             <label className="text-sm font-medium">Property Number *</label>
             <input
               type="text"
+              autoComplete="off"
               className={`w-full h-9 px-3 rounded-md border bg-white ${getFieldError('propertyNumber') ? 'border-red-500' : ''}`}
               placeholder="Unique identifier"
               value={state.data.propertyNumber || ''}
@@ -247,6 +249,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) =>
             <label className="text-sm font-medium">Address *</label>
             <input
               type="text"
+              autoComplete="street-address"
               className={`w-full h-9 px-3 rounded-md border bg-white ${getFieldError('address') ? 'border-red-500' : ''}`}
               placeholder="Street address, postal code, city"
               value={state.data.address || ''}
@@ -260,6 +263,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) =>
             <label className="text-sm font-medium">Management Company</label>
             <input
               type="text"
+              autoComplete="off"
+              data-1p-ignore
               className="w-full h-9 px-3 rounded-md border bg-gray-50"
               placeholder="Company name"
               value={state.data.managementCompany || ''}
@@ -271,6 +276,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) =>
             <label className="text-sm font-medium">Property Manager</label>
             <input
               type="text"
+              autoComplete="off"
+              data-1p-ignore
               className="w-full h-9 px-3 rounded-md border bg-gray-50"
               placeholder="Manager name"
               value={state.data.propertyManager || ''}
@@ -281,6 +288,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ validationErrors = [] }) =>
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium">Accountant *</label>
             <select 
+              autoComplete="off"
+              data-1p-ignore
               className={`w-full h-9 px-3 rounded-md border bg-gray-50 ${getFieldError('accountant') ? 'border-red-500' : ''}`}
               value={state.data.accountant || ''}
               onChange={(e) => handleFieldChange('accountant', e.target.value)}

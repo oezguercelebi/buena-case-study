@@ -211,6 +211,7 @@ const BuildingsStep: React.FC = () => {
                 </Label>
                 <Input
                   type="text"
+                  autoComplete="off"
                   placeholder="e.g., Hauptstraße"
                   value={formData.streetName}
                   onChange={(e) => setFormData({ ...formData, streetName: e.target.value })}
@@ -220,6 +221,7 @@ const BuildingsStep: React.FC = () => {
                 <Label>House Number *</Label>
                 <Input
                   type="text"
+                  autoComplete="off"
                   placeholder="e.g., 123"
                   value={formData.houseNumber}
                   onChange={(e) => setFormData({ ...formData, houseNumber: e.target.value })}
@@ -233,6 +235,7 @@ const BuildingsStep: React.FC = () => {
                 <Label>Postal Code *</Label>
                 <Input
                   type="text"
+                  autoComplete="postal-code"
                   placeholder="e.g., 10115"
                   value={formData.postalCode}
                   onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
@@ -242,6 +245,7 @@ const BuildingsStep: React.FC = () => {
                 <Label>City *</Label>
                 <Input
                   type="text"
+                  autoComplete="address-level2"
                   placeholder="e.g., Berlin"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
@@ -279,6 +283,7 @@ const BuildingsStep: React.FC = () => {
                 </Label>
                 <Input
                   type="number"
+                  autoComplete="off"
                   placeholder={selectedBuildingType === 'altbau' ? '5' : selectedBuildingType === 'hochhaus' ? '12' : '6'}
                   min="1"
                   max="50"
@@ -297,6 +302,7 @@ const BuildingsStep: React.FC = () => {
               <div className="space-y-2">
                 <Label>Starting Floor</Label>
                 <select 
+                  autoComplete="off"
                   className="w-full h-10 px-3 rounded-md border bg-background text-sm"
                   value={formData.startingFloor}
                   onChange={(e) => setFormData({ ...formData, startingFloor: parseInt(e.target.value) })}
@@ -317,6 +323,7 @@ const BuildingsStep: React.FC = () => {
                 </Label>
                 <Input
                   type="number"
+                  autoComplete="off"
                   placeholder={selectedBuildingType === 'altbau' ? '1900' : selectedBuildingType === 'neubau' ? '2020' : 'YYYY'}
                   min="1800"
                   max={new Date().getFullYear()}
