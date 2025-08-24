@@ -25,12 +25,16 @@ const BuildingsStep: React.FC = () => {
     postalCode: '',
     city: '',
     floors: 6,
+    startingFloor: 0,
     constructionYear: 2020
   })
 
   const handleSaveBuilding = () => {
+    // Generate a unique ID for new buildings
+    const buildingId = editingBuilding?.id || `building-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
     const newBuilding: OnboardingBuildingData = {
-      id: editingBuilding?.id || `building-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: buildingId,
       streetName: formData.streetName,
       houseNumber: formData.houseNumber,
       postalCode: formData.postalCode,
@@ -38,15 +42,20 @@ const BuildingsStep: React.FC = () => {
       address: `${formData.streetName} ${formData.houseNumber}, ${formData.postalCode} ${formData.city}`,
       buildingType: selectedBuildingType || 'neubau',
       floors: formData.floors,
+      startingFloor: formData.startingFloor,
       constructionYear: formData.constructionYear,
       units: editingBuilding?.units || []
     }
 
     let updatedBuildings: OnboardingBuildingData[]
 
-    if (editingBuilding) {
-      updatedBuildings = buildings.map(b => b.id === editingBuilding.id ? newBuilding : b)
+    if (editingBuilding && editingBuilding.id) {
+      // Update existing building
+      updatedBuildings = buildings.map(b => 
+        b.id === editingBuilding.id ? newBuilding : b
+      )
     } else {
+      // Add new building
       updatedBuildings = [...buildings, newBuilding]
     }
 
@@ -63,6 +72,7 @@ const BuildingsStep: React.FC = () => {
       postalCode: '',
       city: '',
       floors: 6,
+      startingFloor: 0,
       constructionYear: 2020
     })
   }
@@ -95,13 +105,15 @@ const BuildingsStep: React.FC = () => {
       postalCode,
       city,
       floors: building.floors || 6,
+      startingFloor: building.startingFloor ?? 0,
       constructionYear: building.constructionYear || 2020
     })
     setSelectedBuildingType(building.buildingType || 'neubau')
     setShowBuildingForm(true)
   }
 
-  const handleDeleteBuilding = (buildingId: string) => {
+  const handleDeleteBuilding = (buildingId: string | undefined) => {
+    if (!buildingId) return
     const updatedBuildings = buildings.filter(b => b.id !== buildingId)
     updateData({ buildings: updatedBuildings })
   }
@@ -240,8 +252,8 @@ const BuildingsStep: React.FC = () => {
               </div>
             </div>
 
-            {/* Floor Count and Year */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Floor Configuration */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Layers className="h-4 w-4 text-muted-foreground" />
@@ -261,6 +273,22 @@ const BuildingsStep: React.FC = () => {
                   {selectedBuildingType === 'hochhaus' && 'Typically 9-20 floors'}
                   {selectedBuildingType === 'mixed' && 'Varies by building'}
                   {!selectedBuildingType && 'Enter number of floors'}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Starting Floor</Label>
+                <select 
+                  className="w-full h-10 px-3 rounded-md border bg-background text-sm"
+                  value={formData.startingFloor}
+                  onChange={(e) => setFormData({ ...formData, startingFloor: parseInt(e.target.value) })}
+                >
+                  <option value="-1">-1 (Basement)</option>
+                  <option value="0">0 (Ground/EG)</option>
+                  <option value="1">1 (First)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  German convention: EG = 0
                 </p>
               </div>
 
@@ -306,7 +334,7 @@ const BuildingsStep: React.FC = () => {
           {buildings
             .filter(building => !editingBuilding || building.id !== editingBuilding.id)
             .map((building) => (
-            <Card key={building.id} className="p-4">
+            <Card key={building.id || `temp-${Math.random()}`} className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-muted">
@@ -334,7 +362,7 @@ const BuildingsStep: React.FC = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => handleDeleteBuilding(building.id)}
+                    onClick={() => handleDeleteBuilding(building.id || '')}
                   >
                     <X className="h-4 w-4" />
                   </Button>

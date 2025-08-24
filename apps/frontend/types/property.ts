@@ -38,6 +38,7 @@ export interface OnboardingBuildingData {
   city?: string
   buildingType?: BuildingType
   floors?: number
+  startingFloor?: number
   constructionYear?: number
   units?: OnboardingUnitData[]
   totalArea?: number

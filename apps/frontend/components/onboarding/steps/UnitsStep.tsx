@@ -15,7 +15,8 @@ const UnitsStep: React.FC = () => {
   const propertyType = state.data.type || 'WEG'
   
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildings[0]?.id || '')
-  const [currentFloor, setCurrentFloor] = useState(1)
+  const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
+  const [currentFloor, setCurrentFloor] = useState(selectedBuilding?.startingFloor ?? 0)
   
   // Simple pattern configuration
   const [patternConfig, setPatternConfig] = useState({
@@ -23,7 +24,6 @@ const UnitsStep: React.FC = () => {
     baseRent: 12.50, // EUR per m²
   })
 
-  const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
   const units = selectedBuilding?.units || []
 
   // Keyboard navigation for floors
@@ -36,12 +36,15 @@ const UnitsStep: React.FC = () => {
       const isInputActive = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'SELECT'
       
       if (!isInputActive) {
+        const minFloor = selectedBuilding.startingFloor ?? 0
+        const maxFloor = minFloor + selectedBuilding.floors - 1
+        
         if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
           e.preventDefault()
-          setCurrentFloor(prev => Math.max(1, prev - 1))
+          setCurrentFloor(prev => Math.max(minFloor, prev - 1))
         } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
           e.preventDefault()
-          setCurrentFloor(prev => Math.min(selectedBuilding.floors, prev + 1))
+          setCurrentFloor(prev => Math.min(maxFloor, prev + 1))
         }
       }
     }
@@ -55,8 +58,9 @@ const UnitsStep: React.FC = () => {
 
     const generatedUnits: OnboardingUnitData[] = []
     const totalUnits = selectedBuilding.floors * patternConfig.unitsPerFloor
+    const startingFloor = selectedBuilding.startingFloor ?? 0
     
-    for (let floor = 1; floor <= selectedBuilding.floors; floor++) {
+    for (let floor = startingFloor; floor < startingFloor + selectedBuilding.floors; floor++) {
       for (let unitNum = 1; unitNum <= patternConfig.unitsPerFloor; unitNum++) {
         // Smart defaults based on unit position
         const isSmallUnit = unitNum <= 2 // First 2 units per floor are smaller
@@ -75,8 +79,9 @@ const UnitsStep: React.FC = () => {
           // Equal ownership shares
           unit.ownershipShare = parseFloat((100 / totalUnits).toFixed(3))
         } else if (propertyType === 'MV') {
-          // Higher rent for higher floors
-          const floorMultiplier = 1 + ((floor - 1) * 0.02) // 2% increase per floor
+          // Higher rent for higher floors (relative to starting floor)
+          const relativeFloor = floor - startingFloor
+          const floorMultiplier = 1 + (relativeFloor * 0.02) // 2% increase per floor
           unit.rent = Math.round(unit.size * patternConfig.baseRent * floorMultiplier)
         }
 
@@ -90,7 +95,7 @@ const UnitsStep: React.FC = () => {
       b.id === selectedBuildingId ? updatedBuilding : b
     )
     updateData({ buildings: updatedBuildings })
-    setCurrentFloor(1) // Reset to first floor
+    setCurrentFloor(selectedBuilding.startingFloor ?? 0) // Reset to starting floor
   }
 
   const updateUnit = (unitId: string, field: string, value: any) => {
@@ -200,7 +205,7 @@ const UnitsStep: React.FC = () => {
                     }`}
                     onClick={() => {
                       setSelectedBuildingId(building.id)
-                      setCurrentFloor(1)
+                      setCurrentFloor(building.startingFloor ?? 0)
                     }}
                   >
                     <div className="flex items-center gap-2.5">
@@ -309,7 +314,7 @@ const UnitsStep: React.FC = () => {
                   b.id === selectedBuildingId ? updatedBuilding : b
                 )
                 updateData({ buildings: updatedBuildings })
-                setCurrentFloor(1)
+                setCurrentFloor(selectedBuilding.startingFloor ?? 0)
               }}
             >
               Regenerate All
@@ -335,15 +340,17 @@ const UnitsStep: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentFloor(Math.max(1, currentFloor - 1))}
-                  disabled={currentFloor === 1}
+                  onClick={() => setCurrentFloor(Math.max(selectedBuilding.startingFloor ?? 0, currentFloor - 1))}
+                  disabled={currentFloor === (selectedBuilding.startingFloor ?? 0)}
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous Floor
                 </Button>
                 
                 <div className="text-center">
-                  <p className="text-lg font-medium">Floor {currentFloor}</p>
+                  <p className="text-lg font-medium">
+                    Floor {currentFloor === 0 ? 'EG' : currentFloor === -1 ? 'UG' : currentFloor}
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     {currentFloorUnits.length} units on this floor
                   </p>
@@ -352,8 +359,8 @@ const UnitsStep: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentFloor(Math.min(selectedBuilding.floors, currentFloor + 1))}
-                  disabled={currentFloor === selectedBuilding.floors}
+                  onClick={() => setCurrentFloor(Math.min((selectedBuilding.startingFloor ?? 0) + selectedBuilding.floors - 1, currentFloor + 1))}
+                  disabled={currentFloor === (selectedBuilding.startingFloor ?? 0) + selectedBuilding.floors - 1}
                 >
                   Next Floor
                   <ChevronRight className="h-4 w-4" />
@@ -363,7 +370,7 @@ const UnitsStep: React.FC = () => {
               {/* Floor selector pills */}
               <div className="space-y-3 mb-6">
                 <div className="flex gap-1 overflow-x-auto pb-2">
-                  {Array.from({ length: selectedBuilding.floors }, (_, i) => i + 1).map(floor => (
+                  {Array.from({ length: selectedBuilding.floors }, (_, i) => (selectedBuilding.startingFloor ?? 0) + i).map(floor => (
                     <button
                       key={floor}
                       onClick={() => setCurrentFloor(floor)}
@@ -373,7 +380,7 @@ const UnitsStep: React.FC = () => {
                           : 'bg-muted hover:bg-muted/80'
                       }`}
                     >
-                      {floor}
+                      {floor === 0 ? 'EG' : floor === -1 ? 'UG' : floor}
                     </button>
                   ))}
                 </div>
