@@ -35,7 +35,7 @@ interface OnboardingContextValue {
   setPropertyId: (id: string | null) => void
   saveToLocalStorage: () => void
   loadFromLocalStorage: () => boolean
-  saveToAPI: () => Promise<void>
+  saveToAPI: (isCompleting?: boolean) => Promise<void>
   validateStep: (step: number) => StepValidation
   resetOnboarding: () => void
   canNavigateToStep: (step: number) => boolean
@@ -110,9 +110,11 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
   const setCurrentStep = useCallback((step: number) => {
     dispatch({ type: 'SET_CURRENT_STEP', payload: step })
-    // Mark previous steps as completed
-    const completedSteps = Array.from({ length: step }, (_, i) => i)
-    updateData({ completedSteps })
+    // Mark ONLY previous steps as completed (not the current one)
+    if (step > 0) {
+      const completedSteps = Array.from({ length: step }, (_, i) => i)
+      updateData({ completedSteps })
+    }
   }, [updateData])
 
   const setPropertyId = useCallback((id: string | null) => {
@@ -174,7 +176,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     return false
   }, [])
 
-  const saveToAPI = useCallback(async () => {
+  const saveToAPI = useCallback(async (isCompleting: boolean = false) => {
     if (!state.data.name || !state.data.type) {
       throw new Error('Missing required property information')
     }
@@ -192,10 +194,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         accountant: state.data.accountant,
         address: state.data.address,
         buildings: state.data.buildings || [],
-        currentStep: state.currentStep + 1, // Backend expects 1-based step numbers
+        currentStep: isCompleting ? 3 : state.currentStep + 1, // Backend expects 1-based step numbers
         step1Complete: state.currentStep >= 0,
         step2Complete: state.currentStep >= 1,
-        step3Complete: state.currentStep >= 2,
+        step3Complete: isCompleting, // Only mark complete when user clicks "Complete Property"
       }
 
       let response: any;

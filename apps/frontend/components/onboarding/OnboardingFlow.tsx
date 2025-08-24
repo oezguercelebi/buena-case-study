@@ -165,7 +165,7 @@ const OnboardingFlowContent: React.FC = () => {
     } else {
       // Final step - save to API and complete
       try {
-        await saveToAPI()
+        await saveToAPI(true) // Pass true to indicate completion
         // Clear localStorage and property ID after successful completion
         localStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA)
         localStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP)
