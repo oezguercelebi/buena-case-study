@@ -204,7 +204,7 @@ const OnboardingFlowContent: React.FC = () => {
           if (!unitType || !validTypes.includes(unitType)) {
             invalid.push({
               buildingIndex: bIndex,
-              buildingAddress: building.address || `${building.streetName} ${building.houseNumber}`,
+              buildingAddress: `${building.streetName || ''} ${building.houseNumber || ''}`.trim() || 'Building ' + (bIndex + 1),
               unitIndex: uIndex,
               unitNumber: unit.unitNumber,
               currentType: unit.type

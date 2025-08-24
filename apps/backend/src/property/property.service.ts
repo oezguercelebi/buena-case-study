@@ -1,6 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreatePropertyDto, PropertyType, BuildingType, UnitType } from './dto/create-property.dto';
-import { AutosavePropertyDto, GeneralInfoStepDto, BuildingDataStepDto, UnitsDataStepDto, PartialBuildingDto } from './dto/update-step.dto';
+import {
+  CreatePropertyDto,
+  PropertyType,
+  BuildingType,
+  UnitType,
+} from './dto/create-property.dto';
+import {
+  AutosavePropertyDto,
+  GeneralInfoStepDto,
+  BuildingDataStepDto,
+  UnitsDataStepDto,
+  PartialBuildingDto,
+} from './dto/update-step.dto';
 import { Property, Building, Unit } from './interfaces/property.interface';
 
 export type { Property };
@@ -10,8 +21,10 @@ export class PropertyService {
   private properties: Property[] = [];
 
   // Helper method to convert partial buildings to complete buildings
-  private convertPartialBuildingsToComplete(partialBuildings: PartialBuildingDto[]): Building[] {
-    return partialBuildings.map(partial => ({
+  private convertPartialBuildingsToComplete(
+    partialBuildings: PartialBuildingDto[],
+  ): Building[] {
+    return partialBuildings.map((partial) => ({
       streetName: partial.streetName || '',
       houseNumber: partial.houseNumber || '',
       postalCode: partial.postalCode || '',
@@ -20,17 +33,18 @@ export class PropertyService {
       floors: partial.floors || 1,
       unitsPerFloor: partial.unitsPerFloor || 1,
       constructionYear: partial.constructionYear,
-      units: partial.units?.map(unit => ({
-        unitNumber: unit.unitNumber || '',
-        floor: unit.floor || 0,
-        type: unit.type || 'apartment',
-        rooms: unit.rooms || 1,
-        size: unit.size || 50,
-        ownershipShare: unit.ownershipShare,
-        owner: unit.owner,
-        rent: unit.rent,
-        tenant: unit.tenant,
-      })) || [],
+      units:
+        partial.units?.map((unit) => ({
+          unitNumber: unit.unitNumber || '',
+          floor: unit.floor || 0,
+          type: unit.type || 'apartment',
+          rooms: unit.rooms || 1,
+          size: unit.size || 50,
+          ownershipShare: unit.ownershipShare,
+          owner: unit.owner,
+          rent: unit.rent,
+          tenant: unit.tenant,
+        })) || [],
     }));
   }
 
@@ -46,7 +60,7 @@ export class PropertyService {
   create(createPropertyDto: CreatePropertyDto): Property {
     const totalUnits = (createPropertyDto.buildings || []).reduce(
       (sum, building) => sum + (building.units?.length || 0),
-      0
+      0,
     );
 
     let property: Property = {
@@ -65,7 +79,7 @@ export class PropertyService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    
+
     // Update progress tracking
     property = this.updateProgressTracking(property);
     this.properties.push(property);
@@ -73,7 +87,7 @@ export class PropertyService {
   }
 
   findOne(id: string): Property | undefined {
-    return this.properties.find(property => property.id === id);
+    return this.properties.find((property) => property.id === id);
   }
 
   getStats(): {
@@ -90,20 +104,41 @@ export class PropertyService {
     averageCompletionPercentage: number;
   } {
     const totalProperties = this.properties.length;
-    const wegProperties = this.properties.filter(p => p.type === 'WEG').length;
-    const mvProperties = this.properties.filter(p => p.type === 'MV').length;
+    const wegProperties = this.properties.filter(
+      (p) => p.type === 'WEG',
+    ).length;
+    const mvProperties = this.properties.filter((p) => p.type === 'MV').length;
     const totalUnits = this.properties.reduce((sum, p) => sum + p.unitCount, 0);
-    const activeProperties = this.properties.filter(p => p.status === 'active').length;
-    const archivedProperties = this.properties.filter(p => p.status === 'archived').length;
-    
+    const activeProperties = this.properties.filter(
+      (p) => p.status === 'active',
+    ).length;
+    const archivedProperties = this.properties.filter(
+      (p) => p.status === 'archived',
+    ).length;
+
     // Progress statistics
-    const completedProperties = this.properties.filter(p => p.completed === true).length;
-    const inProgressProperties = this.properties.filter(p => p.completionPercentage && p.completionPercentage > 0 && p.completionPercentage < 100).length;
-    const notStartedProperties = this.properties.filter(p => !p.completionPercentage || p.completionPercentage === 0).length;
-    const averageCompletionPercentage = totalProperties > 0 
-      ? Math.round(this.properties.reduce((sum, p) => sum + (p.completionPercentage || 0), 0) / totalProperties)
-      : 0;
-    
+    const completedProperties = this.properties.filter(
+      (p) => p.completed === true,
+    ).length;
+    const inProgressProperties = this.properties.filter(
+      (p) =>
+        p.completionPercentage &&
+        p.completionPercentage > 0 &&
+        p.completionPercentage < 100,
+    ).length;
+    const notStartedProperties = this.properties.filter(
+      (p) => !p.completionPercentage || p.completionPercentage === 0,
+    ).length;
+    const averageCompletionPercentage =
+      totalProperties > 0
+        ? Math.round(
+            this.properties.reduce(
+              (sum, p) => sum + (p.completionPercentage || 0),
+              0,
+            ) / totalProperties,
+          )
+        : 0;
+
     return {
       totalProperties,
       wegProperties,
@@ -111,7 +146,8 @@ export class PropertyService {
       totalUnits,
       activeProperties,
       archivedProperties,
-      averageUnitsPerProperty: totalProperties > 0 ? Math.round(totalUnits / totalProperties) : 0,
+      averageUnitsPerProperty:
+        totalProperties > 0 ? Math.round(totalUnits / totalProperties) : 0,
       completedProperties,
       inProgressProperties,
       notStartedProperties,
@@ -119,8 +155,11 @@ export class PropertyService {
     };
   }
 
-  update(id: string, updatePropertyDto: Partial<CreatePropertyDto>): Property | null {
-    const index = this.properties.findIndex(property => property.id === id);
+  update(
+    id: string,
+    updatePropertyDto: Partial<CreatePropertyDto>,
+  ): Property | null {
+    const index = this.properties.findIndex((property) => property.id === id);
     if (index === -1) {
       return null;
     }
@@ -130,18 +169,23 @@ export class PropertyService {
       return null;
     }
 
-    const totalUnits = updatePropertyDto.buildings?.reduce(
-      (sum, building) => sum + building.units.length,
-      0
-    ) || existingProperty.unitCount;
+    const totalUnits =
+      updatePropertyDto.buildings?.reduce(
+        (sum, building) => sum + building.units.length,
+        0,
+      ) || existingProperty.unitCount;
 
     let updatedProperty: Property = {
       ...existingProperty,
       name: updatePropertyDto.name || existingProperty.name,
       type: updatePropertyDto.type || existingProperty.type,
-      propertyNumber: updatePropertyDto.propertyNumber || existingProperty.propertyNumber,
-      managementCompany: updatePropertyDto.managementCompany || existingProperty.managementCompany,
-      propertyManager: updatePropertyDto.propertyManager || existingProperty.propertyManager,
+      propertyNumber:
+        updatePropertyDto.propertyNumber || existingProperty.propertyNumber,
+      managementCompany:
+        updatePropertyDto.managementCompany ||
+        existingProperty.managementCompany,
+      propertyManager:
+        updatePropertyDto.propertyManager || existingProperty.propertyManager,
       accountant: updatePropertyDto.accountant || existingProperty.accountant,
       address: updatePropertyDto.address || existingProperty.address,
       buildings: updatePropertyDto.buildings || existingProperty.buildings,
@@ -149,7 +193,7 @@ export class PropertyService {
       lastModified: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    
+
     // Update progress tracking
     updatedProperty = this.updateProgressTracking(updatedProperty);
     this.properties[index] = updatedProperty;
@@ -167,7 +211,9 @@ export class PropertyService {
       propertyManager: initialData?.propertyManager || '',
       accountant: initialData?.accountant || '',
       address: initialData?.address || '',
-      buildings: initialData?.buildings ? this.convertPartialBuildingsToComplete(initialData.buildings) : [],
+      buildings: initialData?.buildings
+        ? this.convertPartialBuildingsToComplete(initialData.buildings)
+        : [],
       unitCount: 0,
       lastModified: new Date().toISOString(),
       status: 'active',
@@ -178,7 +224,7 @@ export class PropertyService {
       step3Complete: initialData?.step3Complete || false,
       currentStep: initialData?.currentStep || 1,
     };
-    
+
     // Update progress tracking
     property = this.updateProgressTracking(property);
     this.properties.push(property);
@@ -187,7 +233,7 @@ export class PropertyService {
 
   // Autosave functionality - updates property with partial data
   autosave(id: string, data: AutosavePropertyDto): Property {
-    const index = this.properties.findIndex(property => property.id === id);
+    const index = this.properties.findIndex((property) => property.id === id);
     if (index === -1) {
       throw new NotFoundException(`Property with id ${id} not found`);
     }
@@ -216,16 +262,27 @@ export class PropertyService {
     // Update individual fields from data
     if (data.name !== undefined) updatedProperty.name = data.name;
     if (data.type !== undefined) updatedProperty.type = data.type;
-    if (data.propertyNumber !== undefined) updatedProperty.propertyNumber = data.propertyNumber;
-    if (data.managementCompany !== undefined) updatedProperty.managementCompany = data.managementCompany;
-    if (data.propertyManager !== undefined) updatedProperty.propertyManager = data.propertyManager;
-    if (data.accountant !== undefined) updatedProperty.accountant = data.accountant;
+    if (data.propertyNumber !== undefined)
+      updatedProperty.propertyNumber = data.propertyNumber;
+    if (data.managementCompany !== undefined)
+      updatedProperty.managementCompany = data.managementCompany;
+    if (data.propertyManager !== undefined)
+      updatedProperty.propertyManager = data.propertyManager;
+    if (data.accountant !== undefined)
+      updatedProperty.accountant = data.accountant;
     if (data.address !== undefined) updatedProperty.address = data.address;
-    if (data.buildings !== undefined) updatedProperty.buildings = this.convertPartialBuildingsToComplete(data.buildings);
-    if (data.step1Complete !== undefined) updatedProperty.step1Complete = data.step1Complete;
-    if (data.step2Complete !== undefined) updatedProperty.step2Complete = data.step2Complete;
-    if (data.step3Complete !== undefined) updatedProperty.step3Complete = data.step3Complete;
-    if (data.currentStep !== undefined) updatedProperty.currentStep = data.currentStep;
+    if (data.buildings !== undefined)
+      updatedProperty.buildings = this.convertPartialBuildingsToComplete(
+        data.buildings,
+      );
+    if (data.step1Complete !== undefined)
+      updatedProperty.step1Complete = data.step1Complete;
+    if (data.step2Complete !== undefined)
+      updatedProperty.step2Complete = data.step2Complete;
+    if (data.step3Complete !== undefined)
+      updatedProperty.step3Complete = data.step3Complete;
+    if (data.currentStep !== undefined)
+      updatedProperty.currentStep = data.currentStep;
 
     // Update progress tracking
     updatedProperty = this.updateProgressTracking(updatedProperty);
@@ -235,7 +292,11 @@ export class PropertyService {
   }
 
   // Update specific step data
-  updateStep(id: string, step: number, data: GeneralInfoStepDto | BuildingDataStepDto | UnitsDataStepDto): Property {
+  updateStep(
+    id: string,
+    step: number,
+    data: GeneralInfoStepDto | BuildingDataStepDto | UnitsDataStepDto,
+  ): Property {
     const property = this.findOne(id);
     if (!property) {
       throw new NotFoundException(`Property with id ${id} not found`);
@@ -260,18 +321,23 @@ export class PropertyService {
         const buildingData = data as BuildingDataStepDto;
         updateData = {
           ...updateData,
-          buildings: buildingData.buildings ? this.convertPartialBuildingsToComplete(buildingData.buildings) : property.buildings,
+          buildings: buildingData.buildings
+            ? this.convertPartialBuildingsToComplete(buildingData.buildings)
+            : property.buildings,
           step2Complete: this.isStep2Complete(buildingData),
         };
         break;
       case 3:
         const unitsData = data as UnitsDataStepDto;
-        const unitCount = unitsData.buildings?.reduce((sum, building) => {
-          return sum + (building.units?.length || 0);
-        }, 0) || property.unitCount;
+        const unitCount =
+          unitsData.buildings?.reduce((sum, building) => {
+            return sum + (building.units?.length || 0);
+          }, 0) || property.unitCount;
         updateData = {
           ...updateData,
-          buildings: unitsData.buildings ? this.convertPartialBuildingsToComplete(unitsData.buildings) : property.buildings,
+          buildings: unitsData.buildings
+            ? this.convertPartialBuildingsToComplete(unitsData.buildings)
+            : property.buildings,
           unitCount,
           step3Complete: this.isStep3Complete(unitsData, property.type),
         };
@@ -283,7 +349,6 @@ export class PropertyService {
     return this.autosave(id, updateData);
   }
 
-
   // Helper methods for step completion validation
   private isStep1Complete(data: GeneralInfoStepDto): boolean {
     return !!(data.name && data.type && data.address);
@@ -291,29 +356,31 @@ export class PropertyService {
 
   private isStep2Complete(data: BuildingDataStepDto): boolean {
     if (!data.buildings || data.buildings.length === 0) return false;
-    return data.buildings.every(building => 
-      building.streetName && 
-      building.houseNumber && 
-      building.postalCode && 
-      building.city && 
-      building.buildingType &&
-      building.floors && 
-      building.unitsPerFloor
+    return data.buildings.every(
+      (building) =>
+        building.streetName &&
+        building.houseNumber &&
+        building.postalCode &&
+        building.city &&
+        building.buildingType &&
+        building.floors &&
+        building.unitsPerFloor,
     );
   }
 
-  private isStep3Complete(data: UnitsDataStepDto, propertyType: 'WEG' | 'MV'): boolean {
+  private isStep3Complete(
+    data: UnitsDataStepDto,
+    propertyType: 'WEG' | 'MV',
+  ): boolean {
     if (!data.buildings || data.buildings.length === 0) return false;
-    
-    return data.buildings.every(building => {
+
+    return data.buildings.every((building) => {
       if (!building.units || building.units.length === 0) return false;
-      
-      return building.units.every(unit => {
-        const basicComplete = unit.unitNumber && 
-                            unit.type && 
-                            unit.rooms && 
-                            unit.size;
-        
+
+      return building.units.every((unit) => {
+        const basicComplete =
+          unit.unitNumber && unit.type && unit.rooms && unit.size;
+
         if (propertyType === 'WEG') {
           return basicComplete && unit.ownershipShare !== undefined;
         } else {
@@ -333,16 +400,17 @@ export class PropertyService {
       completedSections++;
     }
 
-    // Section 2: Buildings (33%) 
+    // Section 2: Buildings (33%)
     if (property.buildings && property.buildings.length > 0) {
-      const allBuildingsComplete = property.buildings.every(building => 
-        building.streetName && 
-        building.houseNumber && 
-        building.postalCode && 
-        building.city && 
-        building.buildingType &&
-        building.floors && 
-        building.unitsPerFloor
+      const allBuildingsComplete = property.buildings.every(
+        (building) =>
+          building.streetName &&
+          building.houseNumber &&
+          building.postalCode &&
+          building.city &&
+          building.buildingType &&
+          building.floors &&
+          building.unitsPerFloor,
       );
       if (allBuildingsComplete) {
         completedSections++;
@@ -351,15 +419,13 @@ export class PropertyService {
 
     // Section 3: Units (34%)
     if (property.buildings && property.buildings.length > 0) {
-      const allUnitsComplete = property.buildings.every(building => {
+      const allUnitsComplete = property.buildings.every((building) => {
         if (!building.units || building.units.length === 0) return false;
-        
-        return building.units.every(unit => {
-          const basicComplete = unit.unitNumber && 
-                              unit.type && 
-                              unit.rooms && 
-                              unit.size;
-          
+
+        return building.units.every((unit) => {
+          const basicComplete =
+            unit.unitNumber && unit.type && unit.rooms && unit.size;
+
           if (property.type === 'WEG') {
             return basicComplete && unit.ownershipShare !== undefined;
           } else {
@@ -388,7 +454,7 @@ export class PropertyService {
 
   // Delete a property
   deleteProperty(id: string): boolean {
-    const index = this.properties.findIndex(property => property.id === id);
+    const index = this.properties.findIndex((property) => property.id === id);
     if (index === -1) {
       return false;
     }
@@ -538,8 +604,16 @@ export class PropertyService {
               rooms: i % 2 === 0 ? 5 : 4,
               size: i % 2 === 0 ? 165 : 135,
               ownershipShare: 12.5,
-              owner: ['Dr. Klaus Weber', 'Maria Schulz', 'Familie Richter', 'Hans-Peter König', 
-                      'Ingrid Lehmann', 'Prof. Müller', 'Familie Braun', 'Sophie Wagner'][i],
+              owner: [
+                'Dr. Klaus Weber',
+                'Maria Schulz',
+                'Familie Richter',
+                'Hans-Peter König',
+                'Ingrid Lehmann',
+                'Prof. Müller',
+                'Familie Braun',
+                'Sophie Wagner',
+              ][i],
             })),
           },
         ],

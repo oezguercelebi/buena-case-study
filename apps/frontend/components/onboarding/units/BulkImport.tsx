@@ -163,10 +163,10 @@ export const BulkImport: React.FC<BulkImportProps> = ({
             const originalValue = String(value)
             unit.type = (typeValueMapping[originalValue] || 'apartment') as any
           } else if (fieldConfig?.type === 'number') {
-            unit[field as keyof OnboardingUnitData] = typeof value === 'number' ? value : parseFloat(value as string) || 0
+            (unit as any)[field] = typeof value === 'number' ? value : parseFloat(value as string) || 0
           } else {
             // Ensure string values are converted to strings
-            unit[field as keyof OnboardingUnitData] = String(value) as any
+            (unit as any)[field] = String(value)
           }
         }
       })

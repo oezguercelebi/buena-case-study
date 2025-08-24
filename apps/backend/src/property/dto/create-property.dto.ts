@@ -1,70 +1,91 @@
-import { IsString, IsEnum, IsOptional, IsArray, ValidateNested, IsNumber, MinLength, MaxLength, Min, Max, IsPositive } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  MinLength,
+  MaxLength,
+  Min,
+  Max,
+  IsPositive,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOwnershipShareValid, HasValidRent, HasUniqueUnitNumbers } from '../validators/ownership-share.validator';
+import {
+  IsOwnershipShareValid,
+  HasValidRent,
+  HasUniqueUnitNumbers,
+} from '../validators/ownership-share.validator';
 
 export type PropertyType = 'WEG' | 'MV';
 export type BuildingType = 'altbau' | 'neubau' | 'hochhaus' | 'mixed';
-export type UnitType = 'apartment' | 'office' | 'parking' | 'storage' | 'commercial';
+export type UnitType =
+  | 'apartment'
+  | 'office'
+  | 'parking'
+  | 'storage'
+  | 'commercial';
 
 class UnitDto {
-  @ApiProperty({ 
-    description: 'Unit number (e.g., "1A", "2.3", "B12")', 
+  @ApiProperty({
+    description: 'Unit number (e.g., "1A", "2.3", "B12")',
     example: '1A',
     minLength: 1,
-    maxLength: 10
+    maxLength: 10,
   })
   @IsString()
   @MinLength(1)
   @MaxLength(10)
   unitNumber!: string;
 
-  @ApiProperty({ 
-    description: 'Floor number (0 for ground floor)', 
+  @ApiProperty({
+    description: 'Floor number (0 for ground floor)',
     example: 1,
     minimum: 0,
-    maximum: 100
+    maximum: 100,
   })
   @IsNumber()
   @Min(0)
   @Max(100)
   floor!: number;
 
-  @ApiProperty({ 
-    description: 'Type of unit', 
+  @ApiProperty({
+    description: 'Type of unit',
     enum: ['apartment', 'office', 'parking', 'storage', 'commercial'],
-    example: 'apartment'
+    example: 'apartment',
   })
   @IsEnum(['apartment', 'office', 'parking', 'storage', 'commercial'])
   type!: UnitType;
 
-  @ApiProperty({ 
-    description: 'Number of rooms', 
+  @ApiProperty({
+    description: 'Number of rooms',
     example: 3,
     minimum: 0,
-    maximum: 20
+    maximum: 20,
   })
   @IsNumber()
   @Min(0)
   @Max(20)
   rooms!: number;
 
-  @ApiProperty({ 
-    description: 'Size in square meters', 
+  @ApiProperty({
+    description: 'Size in square meters',
     example: 85.5,
     minimum: 1,
-    maximum: 10000
+    maximum: 10000,
   })
   @IsNumber()
   @Min(1)
   @Max(10000)
   size!: number;
 
-  @ApiPropertyOptional({ 
-    description: 'Ownership share percentage (for WEG properties)', 
+  @ApiPropertyOptional({
+    description: 'Ownership share percentage (for WEG properties)',
     example: 8.33,
     minimum: 0.01,
-    maximum: 100
+    maximum: 100,
   })
   @IsOptional()
   @IsNumber()
@@ -72,21 +93,21 @@ class UnitDto {
   @Max(100)
   ownershipShare?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'Owner name (for WEG properties)', 
+  @ApiPropertyOptional({
+    description: 'Owner name (for WEG properties)',
     example: 'Familie Schmidt',
-    maxLength: 100
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   owner?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Monthly rent (for MV properties)', 
+  @ApiPropertyOptional({
+    description: 'Monthly rent (for MV properties)',
     example: 1200,
     minimum: 0,
-    maximum: 100000
+    maximum: 100000,
   })
   @IsOptional()
   @IsNumber()
@@ -94,10 +115,10 @@ class UnitDto {
   @Max(100000)
   rent?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'Current tenant name (for MV properties)', 
+  @ApiPropertyOptional({
+    description: 'Current tenant name (for MV properties)',
     example: 'Herr Müller',
-    maxLength: 100
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
@@ -106,85 +127,85 @@ class UnitDto {
 }
 
 class BuildingDto {
-  @ApiProperty({ 
-    description: 'Street name', 
+  @ApiProperty({
+    description: 'Street name',
     example: 'Berliner Straße',
     minLength: 1,
-    maxLength: 100
+    maxLength: 100,
   })
   @IsString()
   @MinLength(1)
   @MaxLength(100)
   streetName!: string;
 
-  @ApiProperty({ 
-    description: 'House number', 
+  @ApiProperty({
+    description: 'House number',
     example: '42A',
     minLength: 1,
-    maxLength: 20
+    maxLength: 20,
   })
   @IsString()
   @MinLength(1)
   @MaxLength(20)
   houseNumber!: string;
 
-  @ApiProperty({ 
-    description: 'Postal code', 
+  @ApiProperty({
+    description: 'Postal code',
     example: '10115',
     minLength: 4,
-    maxLength: 10
+    maxLength: 10,
   })
   @IsString()
   @MinLength(4)
   @MaxLength(10)
   postalCode!: string;
 
-  @ApiProperty({ 
-    description: 'City name', 
+  @ApiProperty({
+    description: 'City name',
     example: 'Berlin',
     minLength: 1,
-    maxLength: 100
+    maxLength: 100,
   })
   @IsString()
   @MinLength(1)
   @MaxLength(100)
   city!: string;
 
-  @ApiProperty({ 
-    description: 'Building type', 
+  @ApiProperty({
+    description: 'Building type',
     enum: ['altbau', 'neubau', 'hochhaus', 'mixed'],
-    example: 'altbau'
+    example: 'altbau',
   })
   @IsEnum(['altbau', 'neubau', 'hochhaus', 'mixed'])
   buildingType!: BuildingType;
 
-  @ApiProperty({ 
-    description: 'Number of floors', 
+  @ApiProperty({
+    description: 'Number of floors',
     example: 4,
     minimum: 1,
-    maximum: 200
+    maximum: 200,
   })
   @IsNumber()
   @IsPositive()
   @Max(200)
   floors!: number;
 
-  @ApiProperty({ 
-    description: 'Number of units per floor', 
+  @ApiProperty({
+    description: 'Number of units per floor',
     example: 3,
     minimum: 1,
-    maximum: 50
+    maximum: 50,
   })
   @IsNumber()
   @IsPositive()
   @Max(50)
   unitsPerFloor!: number;
 
-  @ApiPropertyOptional({ 
-    description: 'Construction year', 
+  @ApiPropertyOptional({
+    description: 'Construction year',
     example: 1905,
     minimum: 1800,
-    maximum: 2030
+    maximum: 2030,
   })
   @IsOptional()
   @IsNumber()
@@ -192,9 +213,9 @@ class BuildingDto {
   @Max(2030)
   constructionYear?: number;
 
-  @ApiProperty({ 
-    description: 'Units in this building', 
-    type: [UnitDto]
+  @ApiProperty({
+    description: 'Units in this building',
+    type: [UnitDto],
   })
   @IsArray()
   @ValidateNested({ each: true })
@@ -203,80 +224,80 @@ class BuildingDto {
 }
 
 export class CreatePropertyDto {
-  @ApiProperty({ 
-    description: 'Property name', 
+  @ApiProperty({
+    description: 'Property name',
     example: 'Berliner Straße 42',
     minLength: 1,
-    maxLength: 200
+    maxLength: 200,
   })
   @IsString()
   @MinLength(1)
   @MaxLength(200)
   name!: string;
 
-  @ApiProperty({ 
-    description: 'Property type', 
+  @ApiProperty({
+    description: 'Property type',
     enum: ['WEG', 'MV'],
     example: 'WEG',
-    enumName: 'PropertyType'
+    enumName: 'PropertyType',
   })
   @IsEnum(['WEG', 'MV'])
   type!: PropertyType;
 
-  @ApiProperty({ 
-    description: 'Unique property number', 
+  @ApiProperty({
+    description: 'Unique property number',
     example: 'WEG-2025-001',
     minLength: 1,
-    maxLength: 50
+    maxLength: 50,
   })
   @IsString()
   @MinLength(1)
   @MaxLength(50)
   propertyNumber!: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Management company name', 
+  @ApiPropertyOptional({
+    description: 'Management company name',
     example: 'Hausverwaltung Schmidt & Partners',
-    maxLength: 200
+    maxLength: 200,
   })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   managementCompany?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Property manager name', 
+  @ApiPropertyOptional({
+    description: 'Property manager name',
     example: 'Thomas Schmidt',
-    maxLength: 100
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   propertyManager?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Accountant name', 
+  @ApiPropertyOptional({
+    description: 'Accountant name',
     example: 'Lisa Becker',
-    maxLength: 100
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   accountant?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Property address', 
+  @ApiPropertyOptional({
+    description: 'Property address',
     example: 'Berliner Straße 42, 10115 Berlin',
-    maxLength: 500
+    maxLength: 500,
   })
   @IsOptional()
   @IsString()
   @MaxLength(500)
   address?: string;
 
-  @ApiProperty({ 
-    description: 'Buildings that make up this property', 
-    type: [BuildingDto]
+  @ApiProperty({
+    description: 'Buildings that make up this property',
+    type: [BuildingDto],
   })
   @IsArray()
   @ValidateNested({ each: true })

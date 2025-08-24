@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ValidationService, ValidationResult } from './validation.service';
 import { Property, Building, Unit } from '../interfaces/property.interface';
-import { GeneralInfoStepDto, BuildingDataStepDto, UnitsDataStepDto } from '../dto/update-step.dto';
+import {
+  GeneralInfoStepDto,
+  BuildingDataStepDto,
+  UnitsDataStepDto,
+} from '../dto/update-step.dto';
 
 describe('ValidationService', () => {
   let service: ValidationService;
@@ -319,7 +323,9 @@ describe('ValidationService', () => {
 
       const result = service.validateUnits(units, 'WEG');
 
-      expect(result.warnings).toContain('Unit 1: Size 15000 m² is unusually large');
+      expect(result.warnings).toContain(
+        'Unit 1: Size 15000 m² is unusually large',
+      );
     });
 
     it('should warn about unusually high rent', () => {
@@ -336,7 +342,9 @@ describe('ValidationService', () => {
 
       const result = service.validateUnits(units, 'MV');
 
-      expect(result.warnings).toContain('Unit 1: Rent 75000€ is unusually high');
+      expect(result.warnings).toContain(
+        'Unit 1: Rent 75000€ is unusually high',
+      );
     });
   });
 
@@ -574,8 +582,8 @@ describe('ValidationService', () => {
       };
 
       // Add a small delay to ensure timestamps are different
-      await new Promise(resolve => setTimeout(resolve, 1));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1));
+
       const result = service.updateProgressTracking(property);
 
       expect(result.completionPercentage).toBe(100);

@@ -28,7 +28,7 @@ describe('PropertyRepository', () => {
     it('should return copies of properties (not references)', async () => {
       const properties1 = await repository.findAll();
       const properties2 = await repository.findAll();
-      
+
       expect(properties1).not.toBe(properties2);
       expect(properties1[0]).not.toBe(properties2[0]);
     });
@@ -38,9 +38,9 @@ describe('PropertyRepository', () => {
     it('should find existing property by ID', async () => {
       const allProperties = await repository.findAll();
       const firstProperty = allProperties[0];
-      
+
       const foundProperty = await repository.findById(firstProperty.id);
-      
+
       expect(foundProperty).toBeDefined();
       expect(foundProperty?.id).toBe(firstProperty.id);
       expect(foundProperty?.name).toBe(firstProperty.name);
@@ -54,9 +54,9 @@ describe('PropertyRepository', () => {
     it('should return a copy of the property (not reference)', async () => {
       const allProperties = await repository.findAll();
       const firstProperty = allProperties[0];
-      
+
       const foundProperty = await repository.findById(firstProperty.id);
-      
+
       expect(foundProperty).not.toBe(firstProperty);
     });
   });
@@ -78,7 +78,7 @@ describe('PropertyRepository', () => {
       };
 
       const createdProperty = await repository.create(newProperty);
-      
+
       expect(createdProperty).toBeDefined();
       expect(createdProperty.id).toBe(newProperty.id);
       expect(createdProperty.name).toBe(newProperty.name);
@@ -87,7 +87,7 @@ describe('PropertyRepository', () => {
 
     it('should add property to the collection', async () => {
       const initialCount = await repository.count();
-      
+
       const newProperty: Property = {
         id: 'test-id-2',
         name: 'Test Property 2',
@@ -103,10 +103,10 @@ describe('PropertyRepository', () => {
       };
 
       await repository.create(newProperty);
-      
+
       const finalCount = await repository.count();
       expect(finalCount).toBe(initialCount + 1);
-      
+
       const foundProperty = await repository.findById('test-id-2');
       expect(foundProperty).toBeDefined();
       expect(foundProperty?.name).toBe('Test Property 2');
@@ -117,15 +117,18 @@ describe('PropertyRepository', () => {
     it('should update existing property', async () => {
       const allProperties = await repository.findAll();
       const propertyToUpdate = allProperties[0];
-      
+
       const updatedProperty: Property = {
         ...propertyToUpdate,
         name: 'Updated Property Name',
         lastModified: new Date().toISOString(),
       };
 
-      const result = await repository.update(propertyToUpdate.id, updatedProperty);
-      
+      const result = await repository.update(
+        propertyToUpdate.id,
+        updatedProperty,
+      );
+
       expect(result).toBeDefined();
       expect(result?.name).toBe('Updated Property Name');
       expect(result?.id).toBe(propertyToUpdate.id);
@@ -146,14 +149,17 @@ describe('PropertyRepository', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      const result = await repository.update('non-existent', nonExistentProperty);
+      const result = await repository.update(
+        'non-existent',
+        nonExistentProperty,
+      );
       expect(result).toBeNull();
     });
 
     it('should persist the update', async () => {
       const allProperties = await repository.findAll();
       const propertyToUpdate = allProperties[0];
-      
+
       const updatedProperty: Property = {
         ...propertyToUpdate,
         name: 'Persisted Update Test',
@@ -161,7 +167,7 @@ describe('PropertyRepository', () => {
       };
 
       await repository.update(propertyToUpdate.id, updatedProperty);
-      
+
       const foundProperty = await repository.findById(propertyToUpdate.id);
       expect(foundProperty?.name).toBe('Persisted Update Test');
     });
@@ -184,10 +190,10 @@ describe('PropertyRepository', () => {
       };
 
       await repository.create(newProperty);
-      
+
       const deleteResult = await repository.delete('delete-test');
       expect(deleteResult).toBe(true);
-      
+
       const foundProperty = await repository.findById('delete-test');
       expect(foundProperty).toBeNull();
     });
@@ -202,13 +208,13 @@ describe('PropertyRepository', () => {
     it('should return correct count of properties', async () => {
       const properties = await repository.findAll();
       const count = await repository.count();
-      
+
       expect(count).toBe(properties.length);
     });
 
     it('should update count after adding property', async () => {
       const initialCount = await repository.count();
-      
+
       const newProperty: Property = {
         id: 'count-test',
         name: 'Count Test Property',
@@ -224,7 +230,7 @@ describe('PropertyRepository', () => {
       };
 
       await repository.create(newProperty);
-      
+
       const finalCount = await repository.count();
       expect(finalCount).toBe(initialCount + 1);
     });
@@ -233,18 +239,18 @@ describe('PropertyRepository', () => {
   describe('findByType', () => {
     it('should find properties by WEG type', async () => {
       const wegProperties = await repository.findByType('WEG');
-      
+
       expect(Array.isArray(wegProperties)).toBe(true);
-      wegProperties.forEach(property => {
+      wegProperties.forEach((property) => {
         expect(property.type).toBe('WEG');
       });
     });
 
     it('should find properties by MV type', async () => {
       const mvProperties = await repository.findByType('MV');
-      
+
       expect(Array.isArray(mvProperties)).toBe(true);
-      mvProperties.forEach(property => {
+      mvProperties.forEach((property) => {
         expect(property.type).toBe('MV');
       });
     });
@@ -252,7 +258,7 @@ describe('PropertyRepository', () => {
     it('should return copies of properties', async () => {
       const wegProperties1 = await repository.findByType('WEG');
       const wegProperties2 = await repository.findByType('WEG');
-      
+
       if (wegProperties1.length > 0 && wegProperties2.length > 0) {
         expect(wegProperties1[0]).not.toBe(wegProperties2[0]);
       }
@@ -262,9 +268,9 @@ describe('PropertyRepository', () => {
   describe('findByStatus', () => {
     it('should find properties by active status', async () => {
       const activeProperties = await repository.findByStatus('active');
-      
+
       expect(Array.isArray(activeProperties)).toBe(true);
-      activeProperties.forEach(property => {
+      activeProperties.forEach((property) => {
         expect(property.status).toBe('active');
       });
     });
@@ -286,12 +292,12 @@ describe('PropertyRepository', () => {
       };
 
       await repository.create(archivedProperty);
-      
+
       const archivedProperties = await repository.findByStatus('archived');
-      
+
       expect(Array.isArray(archivedProperties)).toBe(true);
       expect(archivedProperties.length).toBeGreaterThan(0);
-      archivedProperties.forEach(property => {
+      archivedProperties.forEach((property) => {
         expect(property.status).toBe('archived');
       });
     });
@@ -339,7 +345,7 @@ describe('PropertyRepository', () => {
       // Check that the property was rolled back
       const finalCount = await repository.count();
       expect(finalCount).toBe(initialCount);
-      
+
       const foundProperty = await repository.findById('transaction-test');
       expect(foundProperty).toBeNull();
     });

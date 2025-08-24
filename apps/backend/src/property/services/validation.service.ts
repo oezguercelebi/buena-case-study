@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Property, Building, Unit } from '../interfaces/property.interface';
-import { GeneralInfoStepDto, BuildingDataStepDto, UnitsDataStepDto } from '../dto/update-step.dto';
+import {
+  GeneralInfoStepDto,
+  BuildingDataStepDto,
+  UnitsDataStepDto,
+} from '../dto/update-step.dto';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -10,7 +14,6 @@ export interface ValidationResult {
 
 @Injectable()
 export class ValidationService {
-  
   /**
    * Validates complete property data
    */
@@ -37,11 +40,11 @@ export class ValidationService {
     } else {
       property.buildings.forEach((building, buildingIndex) => {
         const buildingErrors = this.validateBuilding(building, property.type);
-        buildingErrors.errors.forEach(error => 
-          errors.push(`Building ${buildingIndex + 1}: ${error}`)
+        buildingErrors.errors.forEach((error) =>
+          errors.push(`Building ${buildingIndex + 1}: ${error}`),
         );
-        buildingErrors.warnings.forEach(warning => 
-          warnings.push(`Building ${buildingIndex + 1}: ${warning}`)
+        buildingErrors.warnings.forEach((warning) =>
+          warnings.push(`Building ${buildingIndex + 1}: ${warning}`),
         );
       });
     }
@@ -56,7 +59,10 @@ export class ValidationService {
   /**
    * Validates a single building
    */
-  validateBuilding(building: Building, propertyType: 'WEG' | 'MV'): ValidationResult {
+  validateBuilding(
+    building: Building,
+    propertyType: 'WEG' | 'MV',
+  ): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -88,8 +94,14 @@ export class ValidationService {
       errors.push('Units per floor must be at least 1');
     }
 
-    if (building.constructionYear && (building.constructionYear < 1800 || building.constructionYear > new Date().getFullYear() + 10)) {
-      warnings.push(`Construction year ${building.constructionYear} seems unusual`);
+    if (
+      building.constructionYear &&
+      (building.constructionYear < 1800 ||
+        building.constructionYear > new Date().getFullYear() + 10)
+    ) {
+      warnings.push(
+        `Construction year ${building.constructionYear} seems unusual`,
+      );
     }
 
     // Units validation
@@ -99,7 +111,9 @@ export class ValidationService {
       // Check unit count vs expected count
       const expectedUnits = building.floors * building.unitsPerFloor;
       if (building.units.length !== expectedUnits) {
-        warnings.push(`Expected ${expectedUnits} units (${building.floors} floors × ${building.unitsPerFloor} units/floor) but found ${building.units.length}`);
+        warnings.push(
+          `Expected ${expectedUnits} units (${building.floors} floors × ${building.unitsPerFloor} units/floor) but found ${building.units.length}`,
+        );
       }
 
       // Validate individual units
@@ -108,7 +122,9 @@ export class ValidationService {
       warnings.push(...unitValidation.warnings);
 
       // Check for unique unit numbers
-      const unitNumbers = building.units.map(unit => unit.unitNumber).filter(Boolean);
+      const unitNumbers = building.units
+        .map((unit) => unit.unitNumber)
+        .filter(Boolean);
       const uniqueUnitNumbers = new Set(unitNumbers);
       if (unitNumbers.length !== uniqueUnitNumbers.size) {
         errors.push('Unit numbers must be unique within the building');
@@ -150,29 +166,46 @@ export class ValidationService {
       if (typeof unit.size !== 'number' || unit.size <= 0) {
         errors.push(`Unit ${unitIndex + 1}: Valid size is required`);
       } else if (unit.size > 10000) {
-        warnings.push(`Unit ${unitIndex + 1}: Size ${unit.size} m² is unusually large`);
+        warnings.push(
+          `Unit ${unitIndex + 1}: Size ${unit.size} m² is unusually large`,
+        );
       }
 
       // Property type specific validation
       if (propertyType === 'WEG') {
-        if (typeof unit.ownershipShare !== 'number' || unit.ownershipShare <= 0) {
-          errors.push(`Unit ${unitIndex + 1}: Ownership share is required for WEG properties`);
+        if (
+          typeof unit.ownershipShare !== 'number' ||
+          unit.ownershipShare <= 0
+        ) {
+          errors.push(
+            `Unit ${unitIndex + 1}: Ownership share is required for WEG properties`,
+          );
         } else if (unit.ownershipShare > 100) {
-          errors.push(`Unit ${unitIndex + 1}: Ownership share cannot exceed 100%`);
+          errors.push(
+            `Unit ${unitIndex + 1}: Ownership share cannot exceed 100%`,
+          );
         }
 
         if (unit.rent !== undefined) {
-          warnings.push(`Unit ${unitIndex + 1}: Rent value is not typically used for WEG properties`);
+          warnings.push(
+            `Unit ${unitIndex + 1}: Rent value is not typically used for WEG properties`,
+          );
         }
       } else if (propertyType === 'MV') {
         if (typeof unit.rent !== 'number' || unit.rent < 0) {
-          errors.push(`Unit ${unitIndex + 1}: Valid rent is required for MV properties`);
+          errors.push(
+            `Unit ${unitIndex + 1}: Valid rent is required for MV properties`,
+          );
         } else if (unit.rent > 50000) {
-          warnings.push(`Unit ${unitIndex + 1}: Rent ${unit.rent}€ is unusually high`);
+          warnings.push(
+            `Unit ${unitIndex + 1}: Rent ${unit.rent}€ is unusually high`,
+          );
         }
 
         if (unit.ownershipShare !== undefined) {
-          warnings.push(`Unit ${unitIndex + 1}: Ownership share is not typically used for MV properties`);
+          warnings.push(
+            `Unit ${unitIndex + 1}: Ownership share is not typically used for MV properties`,
+          );
         }
       }
     });
@@ -180,11 +213,16 @@ export class ValidationService {
     // Validate ownership shares sum for WEG properties
     if (propertyType === 'WEG') {
       const totalShares = units.reduce((sum, unit) => {
-        return sum + (typeof unit.ownershipShare === 'number' ? unit.ownershipShare : 0);
+        return (
+          sum +
+          (typeof unit.ownershipShare === 'number' ? unit.ownershipShare : 0)
+        );
       }, 0);
 
       if (Math.abs(totalShares - 100) > 0.1) {
-        errors.push(`Total ownership shares (${totalShares.toFixed(2)}%) must sum to 100% (±0.1% tolerance)`);
+        errors.push(
+          `Total ownership shares (${totalShares.toFixed(2)}%) must sum to 100% (±0.1% tolerance)`,
+        );
       }
     }
 
@@ -207,15 +245,18 @@ export class ValidationService {
    */
   isStep2Complete(data: BuildingDataStepDto): boolean {
     if (!data.buildings || data.buildings.length === 0) return false;
-    
-    return data.buildings.every(building => 
-      building.streetName?.trim() && 
-      building.houseNumber?.trim() && 
-      building.postalCode?.trim() && 
-      building.city?.trim() && 
-      building.buildingType &&
-      building.floors && building.floors > 0 && 
-      building.unitsPerFloor && building.unitsPerFloor > 0
+
+    return data.buildings.every(
+      (building) =>
+        building.streetName?.trim() &&
+        building.houseNumber?.trim() &&
+        building.postalCode?.trim() &&
+        building.city?.trim() &&
+        building.buildingType &&
+        building.floors &&
+        building.floors > 0 &&
+        building.unitsPerFloor &&
+        building.unitsPerFloor > 0,
     );
   }
 
@@ -224,20 +265,29 @@ export class ValidationService {
    */
   isStep3Complete(data: UnitsDataStepDto, propertyType: 'WEG' | 'MV'): boolean {
     if (!data.buildings || data.buildings.length === 0) return false;
-    
-    return data.buildings.every(building => {
+
+    return data.buildings.every((building) => {
       if (!building.units || building.units.length === 0) return false;
-      
-      return building.units.every(unit => {
-        const basicComplete = unit.unitNumber?.trim() && 
-                            unit.type && 
-                            typeof unit.rooms === 'number' && unit.rooms >= 0 && 
-                            typeof unit.size === 'number' && unit.size > 0;
-        
+
+      return building.units.every((unit) => {
+        const basicComplete =
+          unit.unitNumber?.trim() &&
+          unit.type &&
+          typeof unit.rooms === 'number' &&
+          unit.rooms >= 0 &&
+          typeof unit.size === 'number' &&
+          unit.size > 0;
+
         if (propertyType === 'WEG') {
-          return basicComplete && typeof unit.ownershipShare === 'number' && unit.ownershipShare > 0;
+          return (
+            basicComplete &&
+            typeof unit.ownershipShare === 'number' &&
+            unit.ownershipShare > 0
+          );
         } else {
-          return basicComplete && typeof unit.rent === 'number' && unit.rent >= 0;
+          return (
+            basicComplete && typeof unit.rent === 'number' && unit.rent >= 0
+          );
         }
       });
     });
@@ -255,16 +305,19 @@ export class ValidationService {
       completedSections++;
     }
 
-    // Section 2: Buildings (33%) 
+    // Section 2: Buildings (33%)
     if (property.buildings && property.buildings.length > 0) {
-      const allBuildingsComplete = property.buildings.every(building => 
-        building.streetName?.trim() && 
-        building.houseNumber?.trim() && 
-        building.postalCode?.trim() && 
-        building.city?.trim() && 
-        building.buildingType &&
-        building.floors && building.floors > 0 && 
-        building.unitsPerFloor && building.unitsPerFloor > 0
+      const allBuildingsComplete = property.buildings.every(
+        (building) =>
+          building.streetName?.trim() &&
+          building.houseNumber?.trim() &&
+          building.postalCode?.trim() &&
+          building.city?.trim() &&
+          building.buildingType &&
+          building.floors &&
+          building.floors > 0 &&
+          building.unitsPerFloor &&
+          building.unitsPerFloor > 0,
       );
       if (allBuildingsComplete) {
         completedSections++;
@@ -273,19 +326,28 @@ export class ValidationService {
 
     // Section 3: Units (34%)
     if (property.buildings && property.buildings.length > 0) {
-      const allUnitsComplete = property.buildings.every(building => {
+      const allUnitsComplete = property.buildings.every((building) => {
         if (!building.units || building.units.length === 0) return false;
-        
-        return building.units.every(unit => {
-          const basicComplete = unit.unitNumber?.trim() && 
-                              unit.type && 
-                              typeof unit.rooms === 'number' && unit.rooms >= 0 && 
-                              typeof unit.size === 'number' && unit.size > 0;
-          
+
+        return building.units.every((unit) => {
+          const basicComplete =
+            unit.unitNumber?.trim() &&
+            unit.type &&
+            typeof unit.rooms === 'number' &&
+            unit.rooms >= 0 &&
+            typeof unit.size === 'number' &&
+            unit.size > 0;
+
           if (property.type === 'WEG') {
-            return basicComplete && typeof unit.ownershipShare === 'number' && unit.ownershipShare > 0;
+            return (
+              basicComplete &&
+              typeof unit.ownershipShare === 'number' &&
+              unit.ownershipShare > 0
+            );
           } else {
-            return basicComplete && typeof unit.rent === 'number' && unit.rent >= 0;
+            return (
+              basicComplete && typeof unit.rent === 'number' && unit.rent >= 0
+            );
           }
         });
       });

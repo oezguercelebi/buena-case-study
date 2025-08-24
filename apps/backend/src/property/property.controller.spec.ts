@@ -28,12 +28,12 @@ describe('PropertyController', () => {
   describe('findAll', () => {
     it('should return all properties', async () => {
       const result = await controller.findAll();
-      
+
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThan(0);
-      
+
       // Check that each property has required fields
-      result.forEach(property => {
+      result.forEach((property) => {
         expect(property).toHaveProperty('id');
         expect(property).toHaveProperty('name');
         expect(property).toHaveProperty('type');
@@ -45,7 +45,7 @@ describe('PropertyController', () => {
   describe('getStats', () => {
     it('should return property statistics', async () => {
       const stats = await controller.getStats();
-      
+
       expect(stats).toHaveProperty('totalProperties');
       expect(stats).toHaveProperty('wegProperties');
       expect(stats).toHaveProperty('mvProperties');
@@ -65,16 +65,22 @@ describe('PropertyController', () => {
 
     it('should have consistent statistics', async () => {
       const stats = await controller.getStats();
-      
+
       // WEG + MV should equal total properties
-      expect(stats.wegProperties + stats.mvProperties).toBe(stats.totalProperties);
-      
+      expect(stats.wegProperties + stats.mvProperties).toBe(
+        stats.totalProperties,
+      );
+
       // Active + Archived should equal total properties
-      expect(stats.activeProperties + stats.archivedProperties).toBe(stats.totalProperties);
-      
+      expect(stats.activeProperties + stats.archivedProperties).toBe(
+        stats.totalProperties,
+      );
+
       // Progress states should sum to total
       expect(
-        stats.completedProperties + stats.inProgressProperties + stats.notStartedProperties
+        stats.completedProperties +
+          stats.inProgressProperties +
+          stats.notStartedProperties,
       ).toBe(stats.totalProperties);
     });
   });
@@ -83,9 +89,9 @@ describe('PropertyController', () => {
     it('should return a specific property by ID', async () => {
       const allProperties = await controller.findAll();
       const firstProperty = allProperties[0];
-      
+
       const result = await controller.findOne(firstProperty.id);
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(firstProperty.id);
       expect(result.name).toBe(firstProperty.name);
@@ -138,7 +144,7 @@ describe('PropertyController', () => {
       };
 
       const result = await controller.create(createDto);
-      
+
       expect(result).toBeDefined();
       expect(result.name).toBe(createDto.name);
       expect(result.type).toBe('WEG');
@@ -195,7 +201,7 @@ describe('PropertyController', () => {
       };
 
       const result = await controller.create(createDto);
-      
+
       expect(result).toBeDefined();
       expect(result.name).toBe(createDto.name);
       expect(result.type).toBe('MV');
@@ -208,14 +214,14 @@ describe('PropertyController', () => {
     it('should update an existing property', async () => {
       const allProperties = await controller.findAll();
       const propertyToUpdate = allProperties[0];
-      
+
       const updateData = {
         name: 'Updated Property Name',
         managementCompany: 'Updated Management Company',
       };
 
       const result = await controller.update(propertyToUpdate.id, updateData);
-      
+
       expect(result).toBeDefined();
       expect(result.name).toBe('Updated Property Name');
       expect(result.managementCompany).toBe('Updated Management Company');
@@ -237,15 +243,18 @@ describe('PropertyController', () => {
     it('should autosave property data', async () => {
       const allProperties = await controller.findAll();
       const propertyToUpdate = allProperties[0];
-      
+
       const autosaveData: AutosavePropertyDto = {
         name: 'Autosaved Property Name',
         managementCompany: 'Autosaved Management Company',
         currentStep: 2,
       };
 
-      const result = await controller.autosave(propertyToUpdate.id, autosaveData);
-      
+      const result = await controller.autosave(
+        propertyToUpdate.id,
+        autosaveData,
+      );
+
       expect(result).toBeDefined();
       expect(result.name).toBe('Autosaved Property Name');
       expect(result.managementCompany).toBe('Autosaved Management Company');
@@ -271,7 +280,7 @@ describe('PropertyController', () => {
     it('should update step 1 data', async () => {
       const allProperties = await controller.findAll();
       const property = allProperties[0];
-      
+
       const stepData = {
         name: 'Updated Step 1 Name',
         type: 'WEG' as const,
@@ -280,7 +289,7 @@ describe('PropertyController', () => {
       };
 
       const result = await controller.updateStep(property.id, '1', stepData);
-      
+
       expect(result).toBeDefined();
       expect(result.name).toBe('Updated Step 1 Name');
       expect(result.address).toBe('Updated Address');
@@ -290,7 +299,7 @@ describe('PropertyController', () => {
     it('should throw error for invalid step number', async () => {
       const allProperties = await controller.findAll();
       const property = allProperties[0];
-      
+
       const stepData = {
         name: 'Should fail',
       };
@@ -339,13 +348,13 @@ describe('PropertyController', () => {
       };
 
       const createdProperty = await controller.create(createDto);
-      
+
       // Now delete it
       const result = await controller.deleteProperty(createdProperty.id);
-      
+
       expect(result).toBeDefined();
       expect(result.message).toBe('Property deleted successfully');
-      
+
       // Verify it's gone
       const foundProperty = await controller.findOne(createdProperty.id);
       expect(foundProperty).toBeUndefined();

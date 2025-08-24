@@ -1,7 +1,14 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
 
-export function IsOwnershipShareValid(propertyType?: string, validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+export function IsOwnershipShareValid(
+  propertyType?: string,
+  validationOptions?: ValidationOptions,
+) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isOwnershipShareValid',
       target: object.constructor,
@@ -27,7 +34,10 @@ export function IsOwnershipShareValid(propertyType?: string, validationOptions?:
 
             const units = building.units;
             const totalShares = units.reduce((sum: number, unit: any) => {
-              if (typeof unit.ownershipShare !== 'number' || unit.ownershipShare <= 0) {
+              if (
+                typeof unit.ownershipShare !== 'number' ||
+                unit.ownershipShare <= 0
+              ) {
                 return NaN; // Invalid share
               }
               return sum + unit.ownershipShare;
@@ -50,7 +60,7 @@ export function IsOwnershipShareValid(propertyType?: string, validationOptions?:
 }
 
 export function HasValidRent(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'hasValidRent',
       target: object.constructor,
@@ -93,7 +103,7 @@ export function HasValidRent(validationOptions?: ValidationOptions) {
 }
 
 export function HasUniqueUnitNumbers(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'hasUniqueUnitNumbers',
       target: object.constructor,

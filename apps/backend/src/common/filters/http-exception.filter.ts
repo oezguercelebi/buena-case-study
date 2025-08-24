@@ -1,4 +1,11 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 
 export interface ErrorResponse {
@@ -28,19 +35,19 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      
+
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const responseObj = exceptionResponse as any;
         message = responseObj.message || exception.message;
         error = responseObj.error || exception.name;
         details = responseObj.details;
       } else {
-        message = exceptionResponse as string;
+        message = exceptionResponse;
       }
     } else if (exception instanceof Error) {
       message = exception.message;
       error = exception.name;
-      
+
       // Handle validation errors specifically
       if (exception.name === 'ValidationError') {
         status = HttpStatus.BAD_REQUEST;
@@ -92,7 +99,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       error = responseObj.error || exception.name;
       details = responseObj.details;
     } else {
-      message = exceptionResponse as string;
+      message = exceptionResponse;
       error = exception.name;
     }
 

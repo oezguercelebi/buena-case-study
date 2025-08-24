@@ -22,11 +22,11 @@ export class PropertyRepository implements IPropertyRepository {
   }
 
   async findAll(): Promise<Property[]> {
-    return this.properties.map(p => JSON.parse(JSON.stringify(p)));
+    return this.properties.map((p) => JSON.parse(JSON.stringify(p)));
   }
 
   async findById(id: string): Promise<Property | null> {
-    const property = this.properties.find(p => p.id === id);
+    const property = this.properties.find((p) => p.id === id);
     return property ? JSON.parse(JSON.stringify(property)) : null;
   }
 
@@ -37,7 +37,7 @@ export class PropertyRepository implements IPropertyRepository {
   }
 
   async update(id: string, property: Property): Promise<Property | null> {
-    const index = this.properties.findIndex(p => p.id === id);
+    const index = this.properties.findIndex((p) => p.id === id);
     if (index === -1) {
       return null;
     }
@@ -47,7 +47,7 @@ export class PropertyRepository implements IPropertyRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    const index = this.properties.findIndex(p => p.id === id);
+    const index = this.properties.findIndex((p) => p.id === id);
     if (index === -1) {
       return false;
     }
@@ -61,11 +61,15 @@ export class PropertyRepository implements IPropertyRepository {
   }
 
   async findByType(type: 'WEG' | 'MV'): Promise<Property[]> {
-    return this.properties.filter(p => p.type === type).map(p => JSON.parse(JSON.stringify(p)));
+    return this.properties
+      .filter((p) => p.type === type)
+      .map((p) => JSON.parse(JSON.stringify(p)));
   }
 
   async findByStatus(status: 'active' | 'archived'): Promise<Property[]> {
-    return this.properties.filter(p => p.status === status).map(p => JSON.parse(JSON.stringify(p)));
+    return this.properties
+      .filter((p) => p.status === status)
+      .map((p) => JSON.parse(JSON.stringify(p)));
   }
 
   // Transaction-like operations for atomicity
@@ -73,7 +77,7 @@ export class PropertyRepository implements IPropertyRepository {
     // In a real database, this would start a transaction
     // For in-memory implementation, we'll simulate this with try/catch
     const snapshot = JSON.parse(JSON.stringify(this.properties));
-    
+
     try {
       return await operation();
     } catch (error) {
@@ -225,8 +229,16 @@ export class PropertyRepository implements IPropertyRepository {
               rooms: i % 2 === 0 ? 5 : 4,
               size: i % 2 === 0 ? 165 : 135,
               ownershipShare: 12.5,
-              owner: ['Dr. Klaus Weber', 'Maria Schulz', 'Familie Richter', 'Hans-Peter König', 
-                      'Ingrid Lehmann', 'Prof. Müller', 'Familie Braun', 'Sophie Wagner'][i],
+              owner: [
+                'Dr. Klaus Weber',
+                'Maria Schulz',
+                'Familie Richter',
+                'Hans-Peter König',
+                'Ingrid Lehmann',
+                'Prof. Müller',
+                'Familie Braun',
+                'Sophie Wagner',
+              ][i],
             })),
           },
         ],
