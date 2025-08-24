@@ -1,31 +1,26 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Building, X, Plus, Sparkles, Calculator, CheckCircle, Home } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
-import { Select } from '../../ui/select'
-import type { Building as BuildingType, Unit, UnitType, ShareDistributionMethod } from '../../../types/property'
-
-interface UnitsStepProps {
-  buildings?: BuildingType[]
-  propertyType?: 'WEG' | 'MV'
-  onUnitsChange?: (units: Unit[]) => void
-}
+import { useOnboarding } from '../../../contexts/OnboardingContext'
+import { OnboardingUnitData, UnitType, ShareDistributionMethod } from '../../../types/property'
 
 type UnitEntryMode = 'pattern' | 'bulk' | 'grid'
 
-const UnitsStep: React.FC<UnitsStepProps> = ({ 
-  buildings = [], 
-  propertyType = 'WEG', 
-  onUnitsChange 
-}) => {
+const UnitsStep: React.FC = () => {
+  const { state, updateData } = useOnboarding()
+  const buildings = state.data.buildings || []
+  const propertyType = state.data.propertyType || 'WEG'
+  
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildings[0]?.id || '')
   const [unitEntryMode, setUnitEntryMode] = useState<UnitEntryMode>('pattern')
-  const [shareDistribution, setShareDistribution] = useState<ShareDistributionMethod>('equal')
-  const [units, setUnits] = useState<Unit[]>([])
+  const [shareDistribution, setShareDistribution] = useState<ShareDistributionMethod>(
+    state.data.shareDistributionMethod || 'equal'
+  )
   
   // Pattern mode state
   const [patternConfig, setPatternConfig] = useState({

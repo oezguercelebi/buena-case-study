@@ -8,10 +8,13 @@ interface OnboardingLayoutProps {
   onCancel: () => void
   onNext: () => void
   onPrevious: () => void
+  onStepClick?: (stepIndex: number) => void
   isFirstStep: boolean
   isLastStep: boolean
   autoSaved: boolean
   lastSavedTime: Date | null
+  canNavigateToStep?: (stepIndex: number) => boolean
+  validationErrors?: string[]
   children: React.ReactNode
 }
 
@@ -21,10 +24,13 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   onCancel,
   onNext,
   onPrevious,
+  onStepClick,
   isFirstStep,
   isLastStep,
   autoSaved,
   lastSavedTime,
+  canNavigateToStep,
+  validationErrors = [],
   children,
 }) => {
   return (
@@ -50,11 +56,8 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                 steps={steps}
                 allowClickableSteps={true}
                 displayMode="icon-only"
-                onStepClick={(index) => {
-                  if (index < currentStep) {
-                    // Allow going back to previous steps
-                  }
-                }}
+                onStepClick={onStepClick}
+                canNavigateToStep={canNavigateToStep}
               />
             </div>
 
@@ -110,9 +113,9 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
             <button
               className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               onClick={onNext}
-              disabled={false}
+              disabled={validationErrors.length > 0}
             >
-              {isLastStep ? 'Complete' : 'Continue'}
+              {isLastStep ? 'Complete Property' : 'Continue'}
               <ChevronRight className="ml-2 h-4 w-4" />
             </button>
           </div>

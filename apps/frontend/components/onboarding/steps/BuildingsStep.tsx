@@ -1,23 +1,22 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Building, X, MapPin, Calendar, Layers, Plus, Sparkles } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
-import type { Building as BuildingType, BuildingType as BuildingCategory } from '../../../types/property'
+import { useOnboarding } from '../../../contexts/OnboardingContext'
+import { BuildingType as BuildingCategory, OnboardingBuildingData } from '../../../types/property'
 
-interface BuildingsStepProps {
-  propertyType?: 'WEG' | 'MV'
-  onBuildingsChange?: (buildings: BuildingType[]) => void
-}
-
-const BuildingsStep: React.FC<BuildingsStepProps> = ({ propertyType = 'WEG', onBuildingsChange }) => {
-  const [buildings, setBuildings] = useState<BuildingType[]>([])
+const BuildingsStep: React.FC = () => {
+  const { state, updateData } = useOnboarding()
   const [showBuildingForm, setShowBuildingForm] = useState(false)
   const [selectedBuildingType, setSelectedBuildingType] = useState<BuildingCategory | null>(null)
-  const [editingBuilding, setEditingBuilding] = useState<BuildingType | null>(null)
+  const [editingBuilding, setEditingBuilding] = useState<OnboardingBuildingData | null>(null)
+
+  // Initialize buildings from context
+  const buildings = state.data.buildings || []
   
   // Form state
   const [formData, setFormData] = useState({
@@ -31,9 +30,8 @@ const BuildingsStep: React.FC<BuildingsStepProps> = ({ propertyType = 'WEG', onB
   })
 
   const handleSaveBuilding = () => {
-    const newBuilding: BuildingType = {
+    const newBuilding: OnboardingBuildingData = {
       id: editingBuilding?.id || Date.now().toString(),
-      propertyId: '1', // In real app, this would come from parent
       streetName: formData.streetName,
       houseNumber: formData.houseNumber,
       postalCode: formData.postalCode,
@@ -42,14 +40,19 @@ const BuildingsStep: React.FC<BuildingsStepProps> = ({ propertyType = 'WEG', onB
       floors: formData.floors,
       unitsPerFloor: formData.unitsPerFloor,
       constructionYear: formData.constructionYear,
-      units: []
+      units: editingBuilding?.units || []
     }
 
+    let updatedBuildings: OnboardingBuildingData[]
+
     if (editingBuilding) {
-      setBuildings(buildings.map(b => b.id === editingBuilding.id ? newBuilding : b))
+      updatedBuildings = buildings.map(b => b.id === editingBuilding.id ? newBuilding : b)
     } else {
-      setBuildings([...buildings, newBuilding])
+      updatedBuildings = [...buildings, newBuilding]
     }
+
+    // Update context
+    updateData({ buildings: updatedBuildings })
 
     // Reset form
     setShowBuildingForm(false)
@@ -64,36 +67,26 @@ const BuildingsStep: React.FC<BuildingsStepProps> = ({ propertyType = 'WEG', onB
       unitsPerFloor: 4,
       constructionYear: 2020
     })
-
-    // Notify parent
-    if (onBuildingsChange) {
-      onBuildingsChange(editingBuilding 
-        ? buildings.map(b => b.id === editingBuilding.id ? newBuilding : b)
-        : [...buildings, newBuilding])
-    }
   }
 
-  const handleEditBuilding = (building: BuildingType) => {
+  const handleEditBuilding = (building: OnboardingBuildingData) => {
     setEditingBuilding(building)
     setFormData({
-      streetName: building.streetName,
-      houseNumber: building.houseNumber,
-      postalCode: building.postalCode,
-      city: building.city,
-      floors: building.floors,
-      unitsPerFloor: building.unitsPerFloor,
+      streetName: building.streetName || '',
+      houseNumber: building.houseNumber || '',
+      postalCode: building.postalCode || '',
+      city: building.city || '',
+      floors: building.floors || 6,
+      unitsPerFloor: building.unitsPerFloor || 4,
       constructionYear: building.constructionYear || 2020
     })
-    setSelectedBuildingType(building.buildingType)
+    setSelectedBuildingType(building.buildingType || 'neubau')
     setShowBuildingForm(true)
   }
 
   const handleDeleteBuilding = (buildingId: string) => {
     const updatedBuildings = buildings.filter(b => b.id !== buildingId)
-    setBuildings(updatedBuildings)
-    if (onBuildingsChange) {
-      onBuildingsChange(updatedBuildings)
-    }
+    updateData({ buildings: updatedBuildings })
   }
 
   const buildingTypes: { id: BuildingCategory; label: string; desc: string }[] = [

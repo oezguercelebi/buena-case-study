@@ -1,0 +1,334 @@
+import { OnboardingPropertyData, OnboardingBuildingData, OnboardingUnitData } from '@/types/property';
+
+export interface FieldError {
+  field: string;
+  message: string;
+}
+
+export interface StepValidation {
+  isValid: boolean;
+  errors: FieldError[];
+  completedFields: number;
+  totalFields: number;
+}
+
+export class PropertyValidationService {
+  
+  /**
+   * Validates Step 1: General Property Information
+   */
+  static validatePropertyStep(data: OnboardingPropertyData): StepValidation {
+    const errors: FieldError[] = [];
+    let completedFields = 0;
+    const totalFields = 6; // name, type, address, managementCompany, propertyManager, accountant
+
+    // Property Name
+    if (!data.name?.trim()) {
+      errors.push({ field: 'name', message: 'Property name is required' });
+    } else {
+      completedFields++;
+    }
+
+    // Property Type
+    if (!data.type) {
+      errors.push({ field: 'type', message: 'Property type is required' });
+    } else if (!['WEG', 'MV'].includes(data.type)) {
+      errors.push({ field: 'type', message: 'Property type must be WEG or MV' });
+    } else {
+      completedFields++;
+    }
+
+    // Address
+    if (!data.address?.trim()) {
+      errors.push({ field: 'address', message: 'Address is required' });
+    } else {
+      completedFields++;
+    }
+
+    // Management Company
+    if (!data.managementCompany?.trim()) {
+      errors.push({ field: 'managementCompany', message: 'Management company is required' });
+    } else {
+      completedFields++;
+    }
+
+    // Property Manager
+    if (!data.propertyManager?.trim()) {
+      errors.push({ field: 'propertyManager', message: 'Property manager is required' });
+    } else {
+      completedFields++;
+    }
+
+    // Accountant (optional but counts toward completion)
+    if (data.accountant?.trim()) {
+      completedFields++;
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      completedFields,
+      totalFields
+    };
+  }
+
+  /**
+   * Validates Step 2: Building Data
+   */
+  static validateBuildingsStep(data: OnboardingPropertyData): StepValidation {
+    const errors: FieldError[] = [];
+    let completedFields = 0;
+    let totalFields = 0;
+
+    if (!data.buildings || data.buildings.length === 0) {
+      errors.push({ field: 'buildings', message: 'At least one building is required' });
+      return { isValid: false, errors, completedFields: 0, totalFields: 1 };
+    }
+
+    // Validate each building
+    data.buildings.forEach((building, buildingIndex) => {
+      const buildingFieldsCount = 4; // address, floors, buildingType, constructionYear
+      totalFields += buildingFieldsCount;
+
+      // Building address
+      if (!building.address?.trim()) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].address`, 
+          message: `Building ${buildingIndex + 1} address is required` 
+        });
+      } else {
+        completedFields++;
+      }
+
+      // Floors
+      if (!building.floors || building.floors < 1 || building.floors > 50) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].floors`, 
+          message: `Building ${buildingIndex + 1} must have 1-50 floors` 
+        });
+      } else {
+        completedFields++;
+      }
+
+      // Building Type
+      if (!building.buildingType) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].buildingType`, 
+          message: `Building ${buildingIndex + 1} type is required` 
+        });
+      } else {
+        completedFields++;
+      }
+
+      // Construction Year
+      const currentYear = new Date().getFullYear();
+      if (!building.constructionYear || building.constructionYear < 1800 || building.constructionYear > currentYear) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].constructionYear`, 
+          message: `Building ${buildingIndex + 1} construction year must be between 1800 and ${currentYear}` 
+        });
+      } else {
+        completedFields++;
+      }
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      completedFields,
+      totalFields
+    };
+  }
+
+  /**
+   * Validates Step 3: Units Data
+   */
+  static validateUnitsStep(data: OnboardingPropertyData): StepValidation {
+    const errors: FieldError[] = [];
+    let completedFields = 0;
+    let totalFields = 0;
+
+    if (!data.buildings || data.buildings.length === 0) {
+      errors.push({ field: 'buildings', message: 'Buildings must be defined before adding units' });
+      return { isValid: false, errors, completedFields: 0, totalFields: 1 };
+    }
+
+    let totalUnitsExpected = 0;
+    let totalUnitsFound = 0;
+
+    data.buildings.forEach((building, buildingIndex) => {
+      if (!building.units || building.units.length === 0) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].units`, 
+          message: `Building ${buildingIndex + 1} must have at least one unit` 
+        });
+        return;
+      }
+
+      totalUnitsExpected += building.units.length;
+      
+      building.units.forEach((unit, unitIndex) => {
+        const unitFieldsCount = data.type === 'WEG' ? 5 : 4; // unitNumber, floor, size, rooms, + (ownershipShare OR currentRent)
+        totalFields += unitFieldsCount;
+
+        // Unit Number
+        if (!unit.unitNumber?.trim()) {
+          errors.push({ 
+            field: `buildings[${buildingIndex}].units[${unitIndex}].unitNumber`, 
+            message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} number is required` 
+          });
+        } else {
+          completedFields++;
+        }
+
+        // Floor
+        if (unit.floor === undefined || unit.floor < 0 || unit.floor > building.floors) {
+          errors.push({ 
+            field: `buildings[${buildingIndex}].units[${unitIndex}].floor`, 
+            message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} floor must be between 0 and ${building.floors}` 
+          });
+        } else {
+          completedFields++;
+        }
+
+        // Size
+        if (!unit.size || unit.size < 15 || unit.size > 500) {
+          errors.push({ 
+            field: `buildings[${buildingIndex}].units[${unitIndex}].size`, 
+            message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} size must be between 15-500 m²` 
+          });
+        } else {
+          completedFields++;
+        }
+
+        // Rooms
+        if (!unit.rooms || unit.rooms < 1 || unit.rooms > 10) {
+          errors.push({ 
+            field: `buildings[${buildingIndex}].units[${unitIndex}].rooms`, 
+            message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} must have 1-10 rooms` 
+          });
+        } else {
+          completedFields++;
+        }
+
+        // Property-type specific validation
+        if (data.type === 'WEG') {
+          // Ownership Share
+          if (unit.ownershipShare === undefined || unit.ownershipShare <= 0) {
+            errors.push({ 
+              field: `buildings[${buildingIndex}].units[${unitIndex}].ownershipShare`, 
+              message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} ownership share is required for WEG properties` 
+            });
+          } else {
+            completedFields++;
+          }
+        } else if (data.type === 'MV') {
+          // Current Rent
+          if (unit.currentRent === undefined || unit.currentRent < 0) {
+            errors.push({ 
+              field: `buildings[${buildingIndex}].units[${unitIndex}].currentRent`, 
+              message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} rent is required for MV properties` 
+            });
+          } else {
+            completedFields++;
+          }
+        }
+
+        totalUnitsFound++;
+      });
+    });
+
+    // WEG-specific validation: ownership shares must sum to 100.000
+    if (data.type === 'WEG' && totalUnitsFound > 0) {
+      const totalOwnership = data.buildings
+        .flatMap(b => b.units || [])
+        .reduce((sum, unit) => sum + (unit.ownershipShare || 0), 0);
+      
+      // Allow for small floating point differences
+      if (Math.abs(totalOwnership - 100.000) > 0.001) {
+        errors.push({ 
+          field: 'ownershipShares', 
+          message: `Total ownership shares must equal 100.000 (currently ${totalOwnership.toFixed(3)})` 
+        });
+      }
+    }
+
+    // Check for duplicate unit numbers within each building
+    data.buildings.forEach((building, buildingIndex) => {
+      if (!building.units) return;
+      
+      const unitNumbers = building.units.map(u => u.unitNumber?.trim().toLowerCase()).filter(Boolean);
+      const duplicates = unitNumbers.filter((num, index) => unitNumbers.indexOf(num) !== index);
+      
+      if (duplicates.length > 0) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].units`, 
+          message: `Building ${buildingIndex + 1} has duplicate unit numbers: ${duplicates.join(', ')}` 
+        });
+      }
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      completedFields,
+      totalFields
+    };
+  }
+
+  /**
+   * Validates all steps and returns overall completion status
+   */
+  static validateAllSteps(data: OnboardingPropertyData): {
+    step1: StepValidation;
+    step2: StepValidation;
+    step3: StepValidation;
+    overallComplete: boolean;
+  } {
+    const step1 = this.validatePropertyStep(data);
+    const step2 = this.validateBuildingsStep(data);
+    const step3 = this.validateUnitsStep(data);
+    
+    return {
+      step1,
+      step2,
+      step3,
+      overallComplete: step1.isValid && step2.isValid && step3.isValid
+    };
+  }
+
+  /**
+   * Quick validation for autosave (less strict)
+   */
+  static validateForAutosave(data: OnboardingPropertyData): boolean {
+    // Allow saving as long as we have basic property info
+    return !!(data.name?.trim() && data.type);
+  }
+
+  /**
+   * Get validation summary for progress indicators
+   */
+  static getProgressSummary(data: OnboardingPropertyData): {
+    step1Progress: number;
+    step2Progress: number;
+    step3Progress: number;
+    overallProgress: number;
+  } {
+    const step1 = this.validatePropertyStep(data);
+    const step2 = this.validateBuildingsStep(data);
+    const step3 = this.validateUnitsStep(data);
+    
+    const step1Progress = step1.totalFields > 0 ? (step1.completedFields / step1.totalFields) * 100 : 0;
+    const step2Progress = step2.totalFields > 0 ? (step2.completedFields / step2.totalFields) * 100 : 0;
+    const step3Progress = step3.totalFields > 0 ? (step3.completedFields / step3.totalFields) * 100 : 0;
+    
+    const overallProgress = (step1Progress + step2Progress + step3Progress) / 3;
+    
+    return {
+      step1Progress: Math.round(step1Progress),
+      step2Progress: Math.round(step2Progress),
+      step3Progress: Math.round(step3Progress),
+      overallProgress: Math.round(overallProgress)
+    };
+  }
+}

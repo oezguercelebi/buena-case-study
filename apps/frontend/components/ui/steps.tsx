@@ -34,6 +34,7 @@ export interface StepsProps
   showProgressBar?: boolean
   allowClickableSteps?: boolean
   onStepClick?: (stepIndex: number) => void
+  canNavigateToStep?: (stepIndex: number) => boolean
   displayMode?: 'all' | 'icon-only' | 'label-only' | 'icon-label'
 }
 
@@ -46,6 +47,7 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
     showProgressBar = true,
     allowClickableSteps = false,
     onStepClick,
+    canNavigateToStep,
     displayMode = 'all',
     ...props
   }, ref) => {
@@ -178,7 +180,7 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
           {steps.map((step, index) => {
             const status = getStepStatus(index, step)
             const colors = getStepColors(status)
-            const isClickable = allowClickableSteps && status === 'completed'
+            const isClickable = allowClickableSteps && (canNavigateToStep ? canNavigateToStep(index) : status === 'completed')
 
             return (
               <div

@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePropertyDto } from './dto/create-property.dto';
+import { AutosavePropertyDto, GeneralInfoStepDto, BuildingDataStepDto, UnitsDataStepDto } from './dto/update-step.dto';
 import { Property } from './interfaces/property.interface';
 
 export type { Property };
@@ -80,6 +81,205 @@ export class PropertyService {
     return this.properties[index];
   }
 
+  // Create a new draft property
+  createDraft(initialData?: Partial<AutosavePropertyDto>): Property {
+    const property: Property = {
+      id: Date.now().toString(),
+      name: initialData?.name || '',
+      type: initialData?.type || 'WEG',
+      propertyNumber: initialData?.propertyNumber || '',
+      managementCompany: initialData?.managementCompany || '',
+      propertyManager: initialData?.propertyManager || '',
+      accountant: initialData?.accountant || '',
+      address: initialData?.address || '',
+      buildings: (initialData?.buildings as any[]) || [],
+      unitCount: 0,
+      lastModified: new Date().toISOString(),
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      step1Complete: initialData?.step1Complete || false,
+      step2Complete: initialData?.step2Complete || false,
+      step3Complete: initialData?.step3Complete || false,
+      currentStep: initialData?.currentStep || 1,
+    };
+    
+    this.properties.push(property);
+    return property;
+  }
+
+  // Autosave functionality - updates a draft with partial data
+  autosave(id: string, data: AutosavePropertyDto): Property {
+    const index = this.properties.findIndex(property => property.id === id);
+    if (index === -1) {
+      throw new NotFoundException(`Property with id ${id} not found`);
+    }
+
+    const property = this.properties[index];
+
+    // Only allow autosave on draft properties
+    if (property.status !== 'draft') {
+      throw new Error('Can only autosave draft properties');
+    }
+
+    // Calculate unit count if buildings are updated
+    let unitCount = property.unitCount;
+    if (data.buildings) {
+      unitCount = data.buildings.reduce((sum, building) => {
+        return sum + (building.units?.length || 0);
+      }, 0);
+    }
+
+    // Update the property with new data
+    this.properties[index] = {
+      ...property,
+      ...(data as any),
+      unitCount,
+      lastModified: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return this.properties[index];
+  }
+
+  // Update specific step data
+  updateStep(id: string, step: number, data: GeneralInfoStepDto | BuildingDataStepDto | UnitsDataStepDto): Property {
+    const property = this.findOne(id);
+    if (!property) {
+      throw new NotFoundException(`Property with id ${id} not found`);
+    }
+
+    if (property.status !== 'draft') {
+      throw new Error('Can only update steps on draft properties');
+    }
+
+    let updateData: Partial<Property> = {
+      currentStep: step,
+      lastModified: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    switch (step) {
+      case 1:
+        const generalInfo = data as GeneralInfoStepDto;
+        updateData = {
+          ...updateData,
+          ...generalInfo,
+          step1Complete: this.isStep1Complete(generalInfo),
+        };
+        break;
+      case 2:
+        const buildingData = data as BuildingDataStepDto;
+        updateData = {
+          ...updateData,
+          buildings: (buildingData.buildings as any) || property.buildings,
+          step2Complete: this.isStep2Complete(buildingData),
+        };
+        break;
+      case 3:
+        const unitsData = data as UnitsDataStepDto;
+        const unitCount = unitsData.buildings?.reduce((sum, building) => {
+          return sum + (building.units?.length || 0);
+        }, 0) || property.unitCount;
+        updateData = {
+          ...updateData,
+          buildings: (unitsData.buildings as any) || property.buildings,
+          unitCount,
+          step3Complete: this.isStep3Complete(unitsData, property.type),
+        };
+        break;
+      default:
+        throw new Error(`Invalid step number: ${step}`);
+    }
+
+    return this.autosave(id, updateData);
+  }
+
+  // Finalize a draft property (convert to active)
+  finalizeDraft(id: string): Property {
+    const property = this.findOne(id);
+    if (!property) {
+      throw new NotFoundException(`Property with id ${id} not found`);
+    }
+
+    if (property.status !== 'draft') {
+      throw new Error('Can only finalize draft properties');
+    }
+
+    // Validate that all required steps are complete
+    if (!this.isDraftComplete(property)) {
+      throw new Error('Cannot finalize incomplete draft. All steps must be completed.');
+    }
+
+    const index = this.properties.findIndex(p => p.id === id);
+    this.properties[index] = {
+      ...property,
+      status: 'active',
+      lastModified: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return this.properties[index];
+  }
+
+  // Helper methods for step completion validation
+  private isStep1Complete(data: GeneralInfoStepDto): boolean {
+    return !!(data.name && data.type && data.address);
+  }
+
+  private isStep2Complete(data: BuildingDataStepDto): boolean {
+    if (!data.buildings || data.buildings.length === 0) return false;
+    return data.buildings.every(building => 
+      building.streetName && 
+      building.houseNumber && 
+      building.postalCode && 
+      building.city && 
+      building.buildingType &&
+      building.floors && 
+      building.unitsPerFloor
+    );
+  }
+
+  private isStep3Complete(data: UnitsDataStepDto, propertyType: 'WEG' | 'MV'): boolean {
+    if (!data.buildings || data.buildings.length === 0) return false;
+    
+    return data.buildings.every(building => {
+      if (!building.units || building.units.length === 0) return false;
+      
+      return building.units.every(unit => {
+        const basicComplete = unit.unitNumber && 
+                            unit.type && 
+                            unit.rooms && 
+                            unit.size;
+        
+        if (propertyType === 'WEG') {
+          return basicComplete && unit.ownershipShare !== undefined;
+        } else {
+          return basicComplete && unit.rent !== undefined;
+        }
+      });
+    });
+  }
+
+  private isDraftComplete(property: Property): boolean {
+    return !!(property.step1Complete && property.step2Complete && property.step3Complete);
+  }
+
+  // Get all draft properties
+  getDrafts(): Property[] {
+    return this.properties.filter(property => property.status === 'draft');
+  }
+
+  // Delete a draft property
+  deleteDraft(id: string): boolean {
+    const index = this.properties.findIndex(property => property.id === id && property.status === 'draft');
+    if (index === -1) {
+      return false;
+    }
+    this.properties.splice(index, 1);
+    return true;
+  }
+
   private initializeSeedData() {
     const seedProperties: Property[] = [
       {
@@ -96,6 +296,10 @@ export class PropertyService {
         status: 'active',
         createdAt: '2024-01-01T10:00:00.000Z',
         updatedAt: '2024-01-15T10:00:00.000Z',
+        step1Complete: true,
+        step2Complete: true,
+        step3Complete: true,
+        currentStep: 3,
         buildings: [
           {
             streetName: 'Friedrichstraße',
@@ -132,6 +336,10 @@ export class PropertyService {
         status: 'active',
         createdAt: '2024-01-02T10:00:00.000Z',
         updatedAt: '2024-01-14T10:00:00.000Z',
+        step1Complete: true,
+        step2Complete: true,
+        step3Complete: true,
+        currentStep: 3,
         buildings: [
           {
             streetName: 'Potsdamer Platz',
@@ -168,6 +376,10 @@ export class PropertyService {
         status: 'draft',
         createdAt: '2024-01-05T10:00:00.000Z',
         updatedAt: '2024-01-10T10:00:00.000Z',
+        step1Complete: true,
+        step2Complete: true,
+        step3Complete: false,
+        currentStep: 3,
         buildings: [
           {
             streetName: 'Alexanderplatz',

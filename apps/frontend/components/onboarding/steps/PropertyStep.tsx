@@ -1,11 +1,52 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Building, Home as HomeIcon, Upload, Sparkles, FileCheck } from 'lucide-react'
+import { useOnboarding } from '../../../contexts/OnboardingContext'
+import { PropertyType } from '../../../types/property'
 
 const PropertyStep: React.FC = () => {
-  const [selectedPropertyType, setSelectedPropertyType] = useState<'WEG' | 'MV' | null>(null)
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const { state, updateData } = useOnboarding()
+  
+  // Local state for UI interaction
+  const [selectedPropertyType, setSelectedPropertyType] = useState<PropertyType | null>(
+    state.data.propertyType || null
+  )
+  const [uploadedFile, setUploadedFile] = useState<File | null>(
+    state.data.uploadedDocument || null
+  )
+
+  // Sync local state with context when component mounts
+  useEffect(() => {
+    if (state.data.propertyType && !selectedPropertyType) {
+      setSelectedPropertyType(state.data.propertyType)
+    }
+    if (state.data.uploadedDocument && !uploadedFile) {
+      setUploadedFile(state.data.uploadedDocument)
+    }
+  }, [state.data.propertyType, state.data.uploadedDocument, selectedPropertyType, uploadedFile])
+
+  // Handle property type selection
+  const handlePropertyTypeSelection = (type: PropertyType) => {
+    setSelectedPropertyType(type)
+    updateData({ 
+      propertyType: type,
+      // Set smart defaults based on property type
+      propertyName: type === 'WEG' ? '' : '', // Will be filled with smart suggestions
+      aiExtractionEnabled: true,
+    })
+  }
+
+  // Handle file upload
+  const handleFileUpload = (file: File) => {
+    setUploadedFile(file)
+    updateData({ uploadedDocument: file })
+  }
+
+  // Handle form field changes
+  const handleFieldChange = (field: string, value: string) => {
+    updateData({ [field]: value })
+  }
 
   if (!selectedPropertyType) {
     return (
@@ -20,7 +61,7 @@ const PropertyStep: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div 
             className="relative p-8 cursor-pointer transition-all border rounded-lg hover:shadow-lg hover:border-gray-400 bg-white"
-            onClick={() => setSelectedPropertyType('WEG')}
+            onClick={() => handlePropertyTypeSelection('WEG')}
           >
             <div className="flex flex-col items-center space-y-4">
               <div className="p-4 rounded-full bg-gray-100">
@@ -44,7 +85,7 @@ const PropertyStep: React.FC = () => {
 
           <div 
             className="relative p-8 cursor-pointer transition-all border rounded-lg hover:shadow-lg hover:border-gray-400 bg-white"
-            onClick={() => setSelectedPropertyType('MV')}
+            onClick={() => handlePropertyTypeSelection('MV')}
           >
             <div className="flex flex-col items-center space-y-4">
               <div className="p-4 rounded-full bg-gray-100">
@@ -113,7 +154,7 @@ const PropertyStep: React.FC = () => {
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={(e) => {
                   if (e.target.files?.[0]) {
-                    setUploadedFile(e.target.files[0])
+                    handleFileUpload(e.target.files[0])
                   }
                 }}
               />
@@ -134,7 +175,10 @@ const PropertyStep: React.FC = () => {
                 </div>
                 <button
                   className="text-sm text-gray-600 hover:text-gray-900"
-                  onClick={() => setUploadedFile(null)}
+                  onClick={() => {
+                    setUploadedFile(null)
+                    updateData({ uploadedDocument: undefined })
+                  }}
                 >
                   Remove
                 </button>
@@ -165,6 +209,8 @@ const PropertyStep: React.FC = () => {
               type="text"
               className="w-full h-9 px-3 rounded-md border bg-white"
               placeholder={selectedPropertyType === 'WEG' ? 'e.g., Hauptstraße 123 WEG' : 'e.g., Hauptstraße 123'}
+              value={state.data.propertyName || ''}
+              onChange={(e) => handleFieldChange('propertyName', e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -173,6 +219,8 @@ const PropertyStep: React.FC = () => {
               type="text"
               className="w-full h-9 px-3 rounded-md border bg-white"
               placeholder="Unique identifier"
+              value={state.data.propertyNumber || ''}
+              onChange={(e) => handleFieldChange('propertyNumber', e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -181,6 +229,8 @@ const PropertyStep: React.FC = () => {
               type="text"
               className="w-full h-9 px-3 rounded-md border bg-white"
               placeholder="Pre-filled from profile"
+              value={state.data.managementCompany || ''}
+              onChange={(e) => handleFieldChange('managementCompany', e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -189,14 +239,20 @@ const PropertyStep: React.FC = () => {
               type="text"
               className="w-full h-9 px-3 rounded-md border bg-white"
               placeholder="Pre-filled from user"
+              value={state.data.propertyManager || ''}
+              onChange={(e) => handleFieldChange('propertyManager', e.target.value)}
             />
           </div>
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium">Accountant</label>
-            <select className="w-full h-9 px-3 rounded-md border bg-white">
-              <option>Select from team...</option>
-              <option>John Doe - Accounting</option>
-              <option>Jane Smith - Finance</option>
+            <select 
+              className="w-full h-9 px-3 rounded-md border bg-white"
+              value={state.data.accountant || ''}
+              onChange={(e) => handleFieldChange('accountant', e.target.value)}
+            >
+              <option value="">Select from team...</option>
+              <option value="john-doe">John Doe - Accounting</option>
+              <option value="jane-smith">Jane Smith - Finance</option>
             </select>
           </div>
         </div>
