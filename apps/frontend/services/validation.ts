@@ -95,13 +95,41 @@ export class PropertyValidationService {
       const buildingFieldsCount = 4; // address, floors, buildingType, constructionYear
       totalFields += buildingFieldsCount;
 
-      // Building address
-      if (!building.address?.trim()) {
+      // Building address fields (check individual components)
+      const hasStreetName = building.streetName?.trim()
+      const hasHouseNumber = building.houseNumber?.trim()
+      const hasPostalCode = building.postalCode?.trim()
+      const hasCity = building.city?.trim()
+      
+      if (!hasStreetName) {
         errors.push({ 
-          field: `buildings[${buildingIndex}].address`, 
-          message: `Building ${buildingIndex + 1} address is required` 
+          field: `buildings[${buildingIndex}].streetName`, 
+          message: `Building ${buildingIndex + 1} street name is required` 
         });
-      } else {
+      }
+      
+      if (!hasHouseNumber) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].houseNumber`, 
+          message: `Building ${buildingIndex + 1} house number is required` 
+        });
+      }
+      
+      if (!hasPostalCode) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].postalCode`, 
+          message: `Building ${buildingIndex + 1} postal code is required` 
+        });
+      }
+      
+      if (!hasCity) {
+        errors.push({ 
+          field: `buildings[${buildingIndex}].city`, 
+          message: `Building ${buildingIndex + 1} city is required` 
+        });
+      }
+      
+      if (hasStreetName && hasHouseNumber && hasPostalCode && hasCity) {
         completedFields++;
       }
 
@@ -169,7 +197,7 @@ export class PropertyValidationService {
       buildingsWithoutUnits: buildingsWithoutUnits.length,
       buildingDetails: data.buildings.map(b => ({
         id: b.id,
-        address: b.address,
+        address: `${b.streetName || ''} ${b.houseNumber || ''}, ${b.postalCode || ''} ${b.city || ''}`.trim(),
         hasUnits: !!(b.units && b.units.length > 0),
         unitCount: b.units?.length || 0
       }))
@@ -213,10 +241,10 @@ export class PropertyValidationService {
         }
 
         // Floor
-        if (unit.floor === undefined || unit.floor < 0 || unit.floor > building.floors) {
+        if (unit.floor === undefined || unit.floor < 0 || unit.floor > (building.floors || 1)) {
           errors.push({ 
             field: `buildings[${buildingIndex}].units[${unitIndex}].floor`, 
-            message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} floor must be between 0 and ${building.floors}` 
+            message: `Building ${buildingIndex + 1}, Unit ${unitIndex + 1} floor must be between 0 and ${building.floors || 1}` 
           });
         } else {
           completedFields++;

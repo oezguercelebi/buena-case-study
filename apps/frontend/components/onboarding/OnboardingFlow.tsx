@@ -54,7 +54,7 @@ const OnboardingFlowContent: React.FC = () => {
   // Debug validation
   if (state.currentStep === 2) {
     const buildingsInfo = state.data.buildings?.map(b => ({
-      address: b.address,
+      address: `${b.streetName || ''} ${b.houseNumber || ''}, ${b.postalCode || ''} ${b.city || ''}`.trim(),
       hasUnits: !!(b.units && b.units.length > 0),
       unitCount: b.units?.length || 0
     }))

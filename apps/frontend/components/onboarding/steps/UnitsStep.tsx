@@ -1,24 +1,34 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { Building, Home, ChevronLeft, ChevronRight, X, Plus, Info } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
+import VirtualizedUnitsTable from '../../ui/VirtualizedUnitsTable'
 import { useOnboarding } from '../../../contexts/OnboardingContext'
 import { OnboardingUnitData, UnitType } from '../../../types/property'
 
-const UnitsStep: React.FC = () => {
+const UnitsStep: React.FC = memo(() => {
   const { state, updateData } = useOnboarding()
   const buildings = state.data.buildings || []
   const propertyType = state.data.type || 'WEG'
   
+  // Memoized building data to prevent unnecessary re-renders
+  const memoizedBuildings = useMemo(() => buildings, [buildings])
+  
   // Initialize with first building if available
-  const initialBuildingId = buildings.length > 0 && buildings[0]?.id ? buildings[0].id : ''
+  const initialBuildingId = useMemo(() => {
+    return buildings.length > 0 && buildings[0]?.id ? buildings[0].id : ''
+  }, [buildings])
+  
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>(initialBuildingId)
   
-  console.log('UnitsStep - Buildings:', buildings.map(b => ({ id: b.id, address: b.address })))
+  console.log('UnitsStep - Buildings:', buildings.map(b => ({ 
+    id: b.id, 
+    address: `${b.streetName || ''} ${b.houseNumber || ''}`.trim() 
+  })))
   console.log('UnitsStep - Selected building ID:', selectedBuildingId, 'Initial:', initialBuildingId)
   
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId) || buildings[0]
@@ -58,7 +68,7 @@ const UnitsStep: React.FC = () => {
       
       if (!isInputActive) {
         const minFloor = selectedBuilding.startingFloor ?? 0
-        const maxFloor = minFloor + selectedBuilding.floors - 1
+        const maxFloor = minFloor + (selectedBuilding.floors || 1) - 1
         
         if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
           e.preventDefault()
@@ -74,13 +84,13 @@ const UnitsStep: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [selectedBuilding])
 
-  const generateUnits = () => {
+  const generateUnits = useCallback(() => {
     if (!selectedBuilding) return
 
     const generatedUnits: OnboardingUnitData[] = []
     const startingFloor = selectedBuilding.startingFloor ?? 0
     
-    for (let floor = startingFloor; floor < startingFloor + selectedBuilding.floors; floor++) {
+    for (let floor = startingFloor; floor < startingFloor + (selectedBuilding.floors || 1); floor++) {
       for (let unitNum = 1; unitNum <= patternConfig.unitsPerFloor; unitNum++) {
         // Smart defaults based on unit position
         const isSmallUnit = unitNum <= 2 // First 2 units per floor are smaller
@@ -99,7 +109,7 @@ const UnitsStep: React.FC = () => {
           // Higher rent for higher floors (relative to starting floor)
           const relativeFloor = floor - startingFloor
           const floorMultiplier = 1 + (relativeFloor * 0.02) // 2% increase per floor
-          unit.rent = Math.round(unit.size * patternConfig.baseRent * floorMultiplier)
+          unit.rent = Math.round((unit.size || 0) * patternConfig.baseRent * floorMultiplier)
         }
 
         generatedUnits.push(unit)
@@ -140,9 +150,9 @@ const UnitsStep: React.FC = () => {
     
     updateData({ buildings: updatedBuildings })
     setCurrentFloor(selectedBuilding.startingFloor ?? 0) // Reset to starting floor
-  }
+  }, [selectedBuilding, selectedBuildingId, patternConfig, buildings, propertyType, updateData])
 
-  const updateUnit = (unitId: string, field: string, value: any) => {
+  const updateUnit = useCallback((unitId: string, field: string, value: any) => {
     if (!selectedBuilding) return
 
     const updatedUnits = units.map(unit => 
@@ -156,9 +166,9 @@ const UnitsStep: React.FC = () => {
       b.id === selectedBuildingId ? updatedBuilding : b
     )
     updateData({ buildings: updatedBuildings })
-  }
+  }, [selectedBuilding, selectedBuildingId, buildings, units, updateData])
 
-  const deleteUnit = (unitId: string) => {
+  const deleteUnit = useCallback((unitId: string) => {
     if (!selectedBuilding) return
 
     const updatedUnits = units.filter(unit => unit.id !== unitId)
@@ -167,9 +177,9 @@ const UnitsStep: React.FC = () => {
       b.id === selectedBuildingId ? updatedBuilding : b
     )
     updateData({ buildings: updatedBuildings })
-  }
+  }, [selectedBuilding, selectedBuildingId, buildings, units, updateData])
 
-  const addUnit = () => {
+  const addUnit = useCallback(() => {
     if (!selectedBuilding) return
 
     const newUnit: OnboardingUnitData = {
@@ -206,11 +216,24 @@ const UnitsStep: React.FC = () => {
       b.id === selectedBuildingId ? updatedBuilding : b
     )
     updateData({ buildings: updatedBuildings })
-  }
+  }, [selectedBuilding, selectedBuildingId, currentFloor, propertyType, buildings, units, updateData])
 
-  const currentFloorUnits = units.filter(u => u.floor === currentFloor)
-  const totalOwnershipShare = units.reduce((sum, u) => sum + (u.ownershipShare || 0), 0)
-  const isOwnershipValid = propertyType === 'WEG' ? Math.abs(totalOwnershipShare - 100) < 0.01 : true
+  // Memoized calculations for performance
+  const currentFloorUnits = useMemo(() => 
+    units.filter(u => u.floor === currentFloor), [units, currentFloor]
+  )
+  
+  const totalOwnershipShare = useMemo(() => 
+    units.reduce((sum, u) => sum + (u.ownershipShare || 0), 0), [units]
+  )
+  
+  const isOwnershipValid = useMemo(() => 
+    propertyType === 'WEG' ? Math.abs(totalOwnershipShare - 100) < 0.01 : true, 
+    [propertyType, totalOwnershipShare]
+  )
+  
+  // Detect if we need virtual scrolling (60+ units)
+  const shouldUseVirtualScrolling = useMemo(() => units.length >= 60, [units.length])
 
   if (buildings.length === 0) {
     return (
@@ -259,7 +282,7 @@ const UnitsStep: React.FC = () => {
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                     onClick={() => {
-                      setSelectedBuildingId(building.id)
+                      setSelectedBuildingId(building.id || '')
                       setCurrentFloor(building.startingFloor ?? 0)
                     }}
                   >
@@ -294,7 +317,7 @@ const UnitsStep: React.FC = () => {
               <div>
                 <p className="font-medium">{selectedBuilding.streetName} {selectedBuilding.houseNumber}</p>
                 <p className="text-sm text-muted-foreground">
-                  {selectedBuilding.floors} floors • {selectedBuilding.buildingType}
+                  {selectedBuilding.floors || 1} floors • {selectedBuilding.buildingType}
                 </p>
               </div>
             </div>
@@ -325,7 +348,7 @@ const UnitsStep: React.FC = () => {
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Total: {selectedBuilding.floors} floors × {patternConfig.unitsPerFloor} units = {selectedBuilding.floors * patternConfig.unitsPerFloor} units
+                Total: {selectedBuilding.floors || 1} floors × {patternConfig.unitsPerFloor} units = {(selectedBuilding.floors || 1) * patternConfig.unitsPerFloor} units
               </p>
             </div>
 
@@ -349,7 +372,7 @@ const UnitsStep: React.FC = () => {
             )}
 
             <Button onClick={generateUnits} className="w-full">
-              Generate {selectedBuilding.floors * patternConfig.unitsPerFloor} Units
+              Generate {(selectedBuilding.floors || 1) * patternConfig.unitsPerFloor} Units
             </Button>
           </div>
         </Card>
@@ -404,8 +427,8 @@ const UnitsStep: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentFloor(Math.min((selectedBuilding.startingFloor ?? 0) + selectedBuilding.floors - 1, currentFloor + 1))}
-                  disabled={currentFloor === (selectedBuilding.startingFloor ?? 0) + selectedBuilding.floors - 1}
+                  onClick={() => setCurrentFloor(Math.min((selectedBuilding.startingFloor ?? 0) + (selectedBuilding.floors || 1) - 1, currentFloor + 1))}
+                  disabled={currentFloor === (selectedBuilding.startingFloor ?? 0) + (selectedBuilding.floors || 1) - 1}
                 >
                   Next Floor
                   <ChevronRight className="h-4 w-4" />
@@ -415,7 +438,7 @@ const UnitsStep: React.FC = () => {
               {/* Floor selector pills */}
               <div className="space-y-3 mb-6">
                 <div className="flex gap-1 overflow-x-auto pb-2">
-                  {Array.from({ length: selectedBuilding.floors }, (_, i) => (selectedBuilding.startingFloor ?? 0) + i).map(floor => (
+                  {Array.from({ length: selectedBuilding.floors || 1 }, (_, i) => (selectedBuilding.startingFloor ?? 0) + i).map(floor => (
                     <button
                       key={floor}
                       onClick={() => setCurrentFloor(floor)}
@@ -437,105 +460,129 @@ const UnitsStep: React.FC = () => {
                 </div>
               </div>
 
-              {/* Units Table for Current Floor */}
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 text-sm font-medium">Unit #</th>
-                      <th className="text-left p-2 text-sm font-medium">Type</th>
-                      <th className="text-left p-2 text-sm font-medium">Rooms</th>
-                      <th className="text-left p-2 text-sm font-medium">Size (m²)</th>
-                      {propertyType === 'WEG' && (
-                        <th className="text-left p-2 text-sm font-medium">Share (%)</th>
-                      )}
-                      {propertyType === 'MV' && (
-                        <th className="text-left p-2 text-sm font-medium">Rent (€)</th>
-                      )}
-                      <th className="w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentFloorUnits.map((unit) => (
-                      <tr key={unit.id} className="border-b hover:bg-muted/30">
-                        <td className="p-1">
-                          <Input
-                            type="text"
-                            className="h-8 text-sm"
-                            value={unit.unitNumber || ''}
-                            onChange={(e) => updateUnit(unit.id, 'unitNumber', e.target.value)}
-                          />
-                        </td>
-                        <td className="p-1">
-                          <select 
-                            className="w-full h-8 px-2 rounded border bg-background text-sm"
-                            value={unit.type || 'apartment'}
-                            onChange={(e) => updateUnit(unit.id, 'type', e.target.value as UnitType)}
-                          >
-                            <option value="apartment">Apartment</option>
-                            <option value="office">Office</option>
-                            <option value="parking">Parking</option>
-                            <option value="storage">Storage</option>
-                          </select>
-                        </td>
-                        <td className="p-1">
-                          <Input
-                            type="number"
-                            className="h-8 text-sm"
-                            min="0"
-                            max="10"
-                            value={unit.rooms || ''}
-                            onChange={(e) => updateUnit(unit.id, 'rooms', parseInt(e.target.value) || 0)}
-                          />
-                        </td>
-                        <td className="p-1">
-                          <Input
-                            type="number"
-                            className="h-8 text-sm"
-                            min="10"
-                            max="500"
-                            value={unit.size || ''}
-                            onChange={(e) => updateUnit(unit.id, 'size', parseInt(e.target.value) || 0)}
-                          />
-                        </td>
+              {/* Conditional rendering: Virtual scrolling for 60+ units, regular table for smaller datasets */}
+              {shouldUseVirtualScrolling ? (
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground bg-blue-50 border border-blue-200 rounded p-3">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium text-blue-800">Performance Mode Active</span>
+                    </div>
+                    <p className="mt-1 text-blue-700">
+                      Virtual scrolling enabled for {units.length} units. All units from all floors are shown in one optimized view.
+                    </p>
+                  </div>
+                  <VirtualizedUnitsTable
+                    units={units}
+                    propertyType={propertyType}
+                    onUpdateUnit={updateUnit}
+                    onDeleteUnit={deleteUnit}
+                    height={500}
+                    className="w-full"
+                  />
+                </div>
+              ) : (
+                /* Regular table view for smaller datasets */
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2 text-sm font-medium">Unit #</th>
+                        <th className="text-left p-2 text-sm font-medium">Type</th>
+                        <th className="text-left p-2 text-sm font-medium">Rooms</th>
+                        <th className="text-left p-2 text-sm font-medium">Size (m²)</th>
                         {propertyType === 'WEG' && (
-                          <td className="p-1">
-                            <Input
-                              type="number"
-                              className="h-8 text-sm"
-                              step="0.001"
-                              min="0"
-                              max="100"
-                              value={unit.ownershipShare || ''}
-                              onChange={(e) => updateUnit(unit.id, 'ownershipShare', parseFloat(e.target.value) || 0)}
-                            />
-                          </td>
+                          <th className="text-left p-2 text-sm font-medium">Share (%)</th>
                         )}
                         {propertyType === 'MV' && (
+                          <th className="text-left p-2 text-sm font-medium">Rent (€)</th>
+                        )}
+                        <th className="w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentFloorUnits.map((unit) => (
+                        <tr key={unit.id} className="border-b hover:bg-muted/30">
+                          <td className="p-1">
+                            <Input
+                              type="text"
+                              className="h-8 text-sm"
+                              value={unit.unitNumber || ''}
+                              onChange={(e) => updateUnit(unit.id!, 'unitNumber', e.target.value)}
+                            />
+                          </td>
+                          <td className="p-1">
+                            <select 
+                              className="w-full h-8 px-2 rounded border bg-background text-sm"
+                              value={unit.type || 'apartment'}
+                              onChange={(e) => updateUnit(unit.id!, 'type', e.target.value as UnitType)}
+                            >
+                              <option value="apartment">Apartment</option>
+                              <option value="office">Office</option>
+                              <option value="parking">Parking</option>
+                              <option value="storage">Storage</option>
+                              <option value="commercial">Commercial</option>
+                            </select>
+                          </td>
                           <td className="p-1">
                             <Input
                               type="number"
                               className="h-8 text-sm"
                               min="0"
-                              value={unit.rent || ''}
-                              onChange={(e) => updateUnit(unit.id, 'rent', parseInt(e.target.value) || 0)}
+                              max="10"
+                              value={unit.rooms || ''}
+                              onChange={(e) => updateUnit(unit.id!, 'rooms', parseInt(e.target.value) || 0)}
                             />
                           </td>
-                        )}
-                        <td className="p-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => deleteUnit(unit.id)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          <td className="p-1">
+                            <Input
+                              type="number"
+                              className="h-8 text-sm"
+                              min="10"
+                              max="500"
+                              value={unit.size || ''}
+                              onChange={(e) => updateUnit(unit.id!, 'size', parseInt(e.target.value) || 0)}
+                            />
+                          </td>
+                          {propertyType === 'WEG' && (
+                            <td className="p-1">
+                              <Input
+                                type="number"
+                                className="h-8 text-sm"
+                                step="0.001"
+                                min="0"
+                                max="100"
+                                value={unit.ownershipShare || ''}
+                                onChange={(e) => updateUnit(unit.id!, 'ownershipShare', parseFloat(e.target.value) || 0)}
+                              />
+                            </td>
+                          )}
+                          {propertyType === 'MV' && (
+                            <td className="p-1">
+                              <Input
+                                type="number"
+                                className="h-8 text-sm"
+                                min="0"
+                                value={unit.rent || ''}
+                                onChange={(e) => updateUnit(unit.id!, 'rent', parseInt(e.target.value) || 0)}
+                              />
+                            </td>
+                          )}
+                          <td className="p-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => deleteUnit(unit.id!)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               {/* Add Unit Button */}
               <div className="flex items-center justify-between pt-2">
@@ -589,6 +636,8 @@ const UnitsStep: React.FC = () => {
       )}
     </div>
   )
-}
+})
+
+UnitsStep.displayName = 'UnitsStep'
 
 export default UnitsStep

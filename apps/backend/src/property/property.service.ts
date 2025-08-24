@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreatePropertyDto } from './dto/create-property.dto';
-import { AutosavePropertyDto, GeneralInfoStepDto, BuildingDataStepDto, UnitsDataStepDto } from './dto/update-step.dto';
-import { Property } from './interfaces/property.interface';
+import { CreatePropertyDto, PropertyType, BuildingType, UnitType } from './dto/create-property.dto';
+import { AutosavePropertyDto, GeneralInfoStepDto, BuildingDataStepDto, UnitsDataStepDto, PartialBuildingDto } from './dto/update-step.dto';
+import { Property, Building, Unit } from './interfaces/property.interface';
 
 export type { Property };
 
@@ -9,16 +9,41 @@ export type { Property };
 export class PropertyService {
   private properties: Property[] = [];
 
+  // Helper method to convert partial buildings to complete buildings
+  private convertPartialBuildingsToComplete(partialBuildings: PartialBuildingDto[]): Building[] {
+    return partialBuildings.map(partial => ({
+      streetName: partial.streetName || '',
+      houseNumber: partial.houseNumber || '',
+      postalCode: partial.postalCode || '',
+      city: partial.city || '',
+      buildingType: partial.buildingType || 'altbau',
+      floors: partial.floors || 1,
+      unitsPerFloor: partial.unitsPerFloor || 1,
+      constructionYear: partial.constructionYear,
+      units: partial.units?.map(unit => ({
+        unitNumber: unit.unitNumber || '',
+        floor: unit.floor || 0,
+        type: unit.type || 'apartment',
+        rooms: unit.rooms || 1,
+        size: unit.size || 50,
+        ownershipShare: unit.ownershipShare,
+        owner: unit.owner,
+        rent: unit.rent,
+        tenant: unit.tenant,
+      })) || [],
+    }));
+  }
+
   constructor() {
     // Initialize with seed data
     this.initializeSeedData();
   }
 
-  findAll() {
+  findAll(): Property[] {
     return this.properties;
   }
 
-  create(createPropertyDto: CreatePropertyDto) {
+  create(createPropertyDto: CreatePropertyDto): Property {
     const totalUnits = (createPropertyDto.buildings || []).reduce(
       (sum, building) => sum + (building.units?.length || 0),
       0
@@ -47,11 +72,23 @@ export class PropertyService {
     return property;
   }
 
-  findOne(id: string) {
+  findOne(id: string): Property | undefined {
     return this.properties.find(property => property.id === id);
   }
 
-  getStats() {
+  getStats(): {
+    totalProperties: number;
+    wegProperties: number;
+    mvProperties: number;
+    totalUnits: number;
+    activeProperties: number;
+    archivedProperties: number;
+    averageUnitsPerProperty: number;
+    completedProperties: number;
+    inProgressProperties: number;
+    notStartedProperties: number;
+    averageCompletionPercentage: number;
+  } {
     const totalProperties = this.properties.length;
     const wegProperties = this.properties.filter(p => p.type === 'WEG').length;
     const mvProperties = this.properties.filter(p => p.type === 'MV').length;
@@ -82,27 +119,32 @@ export class PropertyService {
     };
   }
 
-  update(id: string, updatePropertyDto: Partial<CreatePropertyDto>) {
+  update(id: string, updatePropertyDto: Partial<CreatePropertyDto>): Property | null {
     const index = this.properties.findIndex(property => property.id === id);
     if (index === -1) {
+      return null;
+    }
+
+    const existingProperty = this.properties[index];
+    if (!existingProperty) {
       return null;
     }
 
     const totalUnits = updatePropertyDto.buildings?.reduce(
       (sum, building) => sum + building.units.length,
       0
-    ) || this.properties[index].unitCount;
+    ) || existingProperty.unitCount;
 
     let updatedProperty: Property = {
-      ...this.properties[index],
-      name: updatePropertyDto.name || this.properties[index].name,
-      type: updatePropertyDto.type || this.properties[index].type,
-      propertyNumber: updatePropertyDto.propertyNumber || this.properties[index].propertyNumber,
-      managementCompany: updatePropertyDto.managementCompany || this.properties[index].managementCompany,
-      propertyManager: updatePropertyDto.propertyManager || this.properties[index].propertyManager,
-      accountant: updatePropertyDto.accountant || this.properties[index].accountant,
-      address: updatePropertyDto.address || this.properties[index].address,
-      buildings: updatePropertyDto.buildings || this.properties[index].buildings,
+      ...existingProperty,
+      name: updatePropertyDto.name || existingProperty.name,
+      type: updatePropertyDto.type || existingProperty.type,
+      propertyNumber: updatePropertyDto.propertyNumber || existingProperty.propertyNumber,
+      managementCompany: updatePropertyDto.managementCompany || existingProperty.managementCompany,
+      propertyManager: updatePropertyDto.propertyManager || existingProperty.propertyManager,
+      accountant: updatePropertyDto.accountant || existingProperty.accountant,
+      address: updatePropertyDto.address || existingProperty.address,
+      buildings: updatePropertyDto.buildings || existingProperty.buildings,
       unitCount: totalUnits,
       lastModified: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -125,7 +167,7 @@ export class PropertyService {
       propertyManager: initialData?.propertyManager || '',
       accountant: initialData?.accountant || '',
       address: initialData?.address || '',
-      buildings: (initialData?.buildings as any[]) || [],
+      buildings: initialData?.buildings ? this.convertPartialBuildingsToComplete(initialData.buildings) : [],
       unitCount: 0,
       lastModified: new Date().toISOString(),
       status: 'active',
@@ -151,6 +193,9 @@ export class PropertyService {
     }
 
     const property = this.properties[index];
+    if (!property) {
+      throw new NotFoundException(`Property with id ${id} not found`);
+    }
 
     // Calculate unit count if buildings are updated
     let unitCount = property.unitCount;
@@ -163,11 +208,24 @@ export class PropertyService {
     // Update the property with new data
     let updatedProperty: Property = {
       ...property,
-      ...(data as any),
       unitCount,
       lastModified: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Update individual fields from data
+    if (data.name !== undefined) updatedProperty.name = data.name;
+    if (data.type !== undefined) updatedProperty.type = data.type;
+    if (data.propertyNumber !== undefined) updatedProperty.propertyNumber = data.propertyNumber;
+    if (data.managementCompany !== undefined) updatedProperty.managementCompany = data.managementCompany;
+    if (data.propertyManager !== undefined) updatedProperty.propertyManager = data.propertyManager;
+    if (data.accountant !== undefined) updatedProperty.accountant = data.accountant;
+    if (data.address !== undefined) updatedProperty.address = data.address;
+    if (data.buildings !== undefined) updatedProperty.buildings = this.convertPartialBuildingsToComplete(data.buildings);
+    if (data.step1Complete !== undefined) updatedProperty.step1Complete = data.step1Complete;
+    if (data.step2Complete !== undefined) updatedProperty.step2Complete = data.step2Complete;
+    if (data.step3Complete !== undefined) updatedProperty.step3Complete = data.step3Complete;
+    if (data.currentStep !== undefined) updatedProperty.currentStep = data.currentStep;
 
     // Update progress tracking
     updatedProperty = this.updateProgressTracking(updatedProperty);
@@ -202,7 +260,7 @@ export class PropertyService {
         const buildingData = data as BuildingDataStepDto;
         updateData = {
           ...updateData,
-          buildings: (buildingData.buildings as any) || property.buildings,
+          buildings: buildingData.buildings ? this.convertPartialBuildingsToComplete(buildingData.buildings) : property.buildings,
           step2Complete: this.isStep2Complete(buildingData),
         };
         break;
@@ -213,7 +271,7 @@ export class PropertyService {
         }, 0) || property.unitCount;
         updateData = {
           ...updateData,
-          buildings: (unitsData.buildings as any) || property.buildings,
+          buildings: unitsData.buildings ? this.convertPartialBuildingsToComplete(unitsData.buildings) : property.buildings,
           unitCount,
           step3Complete: this.isStep3Complete(unitsData, property.type),
         };
@@ -373,9 +431,9 @@ export class PropertyService {
             units: Array.from({ length: 12 }, (_, i) => ({
               unitNumber: `${Math.floor(i / 3) + 1}.${(i % 3) + 1}`,
               floor: Math.floor(i / 3),
-              type: 'apartment' as const,
-              rooms: [3, 4, 2][i % 3],
-              size: [85, 110, 65][i % 3],
+              type: 'apartment' as UnitType,
+              rooms: [3, 4, 2][i % 3] as number,
+              size: [85, 110, 65][i % 3] as number,
               ownershipShare: 8.33,
               owner: `${['Familie', 'Herr', 'Frau'][i % 3]} ${['Meyer', 'Schmidt', 'Weber', 'Wagner'][Math.floor(i / 3)]}`,
             })),
@@ -415,9 +473,9 @@ export class PropertyService {
             units: Array.from({ length: 24 }, (_, i) => ({
               unitNumber: `A${Math.floor(i / 4) + 1}.${(i % 4) + 1}`,
               floor: Math.floor(i / 4),
-              type: 'apartment' as const,
-              rooms: [1, 2, 3, 2][i % 4],
-              size: [45, 65, 85, 55][i % 4],
+              type: 'apartment' as UnitType,
+              rooms: [1, 2, 3, 2][i % 4] as number,
+              size: [45, 65, 85, 55][i % 4] as number,
               rent: [950, 1250, 1650, 1100][i % 4],
               tenant: i % 5 === 0 ? undefined : `Mieter ${i + 1}`,
             })),
@@ -434,9 +492,9 @@ export class PropertyService {
             units: Array.from({ length: 24 }, (_, i) => ({
               unitNumber: `B${Math.floor(i / 4) + 1}.${(i % 4) + 1}`,
               floor: Math.floor(i / 4),
-              type: 'apartment' as const,
-              rooms: [2, 3, 1, 2][i % 4],
-              size: [60, 80, 40, 55][i % 4],
+              type: 'apartment' as UnitType,
+              rooms: [2, 3, 1, 2][i % 4] as number,
+              size: [60, 80, 40, 55][i % 4] as number,
               rent: [1150, 1450, 850, 1050][i % 4],
               tenant: i % 6 === 0 ? undefined : `Mieter ${i + 25}`,
             })),
@@ -476,7 +534,7 @@ export class PropertyService {
             units: Array.from({ length: 8 }, (_, i) => ({
               unitNumber: `${Math.floor(i / 2) + 1}${i % 2 === 0 ? 'A' : 'B'}`,
               floor: Math.floor(i / 2),
-              type: 'apartment' as const,
+              type: 'apartment' as UnitType,
               rooms: i % 2 === 0 ? 5 : 4,
               size: i % 2 === 0 ? 165 : 135,
               ownershipShare: 12.5,

@@ -35,5 +35,5 @@ export * from './file-upload'
 export * from './data-grid'
 export * from './autocomplete'
 
-// Theme Provider
-export * from './theme-provider'
+// Theme Provider - if needed, create ./theme-provider.tsx
+// export * from './theme-provider'

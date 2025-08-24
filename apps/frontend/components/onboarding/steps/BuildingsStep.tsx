@@ -20,16 +20,12 @@ const BuildingsStep: React.FC = () => {
   
   // Helper to ensure all buildings have IDs and addresses (for validation)
   React.useEffect(() => {
-    const needsUpdate = buildings.some(b => !b.id || (!b.address && b.streetName && b.houseNumber))
+    const needsUpdate = buildings.some(b => !b.id)
     if (needsUpdate) {
       const updatedBuildings = buildings.map(b => ({
         ...b,
         // Ensure every building has an ID
-        id: b.id || `building-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        // Ensure address field exists
-        address: b.address || (b.streetName && b.houseNumber && b.postalCode && b.city 
-          ? `${b.streetName} ${b.houseNumber}, ${b.postalCode} ${b.city}`
-          : b.address || '')
+        id: b.id || `building-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       }))
       console.log('BuildingsStep: Fixed missing IDs/addresses:', updatedBuildings)
       updateData({ buildings: updatedBuildings })
@@ -57,7 +53,7 @@ const BuildingsStep: React.FC = () => {
       houseNumber: formData.houseNumber,
       postalCode: formData.postalCode,
       city: formData.city,
-      address: `${formData.streetName} ${formData.houseNumber}, ${formData.postalCode} ${formData.city}`,
+      // address is computed from individual fields
       buildingType: selectedBuildingType || 'neubau',
       floors: formData.floors,
       startingFloor: formData.startingFloor,
@@ -103,19 +99,7 @@ const BuildingsStep: React.FC = () => {
     let postalCode = building.postalCode || ''
     let city = building.city || ''
     
-    // If individual fields are not available but address is, try to parse it
-    if (building.address && (!streetName || !houseNumber)) {
-      // This is a simple fallback, ideally the individual fields should be stored
-      const addressParts = building.address.split(',')
-      if (addressParts.length >= 2) {
-        const streetParts = addressParts[0].trim().split(' ')
-        houseNumber = streetParts.pop() || ''
-        streetName = streetParts.join(' ')
-        const cityParts = addressParts[1].trim().split(' ')
-        postalCode = cityParts[0] || ''
-        city = cityParts.slice(1).join(' ')
-      }
-    }
+    // Note: Address is computed from individual fields in the new shared types
     
     setFormData({
       streetName,

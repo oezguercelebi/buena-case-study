@@ -17,8 +17,8 @@ export function useAutosave(options: UseAutosaveOptions = {}) {
   } = options
 
   const { state, saveToLocalStorage, saveToAPI } = useOnboarding()
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>()
-  const apiSyncTimeoutRef = useRef<NodeJS.Timeout>()
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const apiSyncTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const lastSyncRef = useRef<Date | null>(null)
 
   // Debounced localStorage save

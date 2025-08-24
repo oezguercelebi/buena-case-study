@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
 import { OnboardingPropertyData, STORAGE_KEYS } from '../types/property'
 import { PropertyValidationService, StepValidation } from '../services/validation'
+import { useAutosaveDebounce } from '../hooks/useDebounce'
 import { api } from '../utils/api'
 
 interface OnboardingState {
@@ -275,23 +276,34 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   // Note: We don't auto-load from localStorage anymore
   // The OnboardingFlow component will handle loading after validating the property exists
 
-  // Auto-save property to API when data changes
+  // Debounced autosave setup
+  const debouncedSave = useCallback(async () => {
+    if (!state.hasUnsavedChanges || !state.data.name || !state.data.type) {
+      return
+    }
+
+    try {
+      await saveToAPI()
+      console.log('Auto-saved property to API')
+    } catch (error) {
+      console.error('Auto-save failed:', error)
+      // Fall back to localStorage on API failure
+      saveToLocalStorage()
+    }
+  }, [state.hasUnsavedChanges, state.data.name, state.data.type, saveToAPI, saveToLocalStorage])
+
+  const { triggerSave } = useAutosaveDebounce(
+    debouncedSave,
+    1500, // 1.5 seconds debounce - faster than before for better UX
+    state.hasUnsavedChanges
+  )
+
+  // Trigger debounced save when data changes
   useEffect(() => {
     if (state.hasUnsavedChanges && state.data.name && state.data.type) {
-      const timeoutId = setTimeout(async () => {
-        try {
-          await saveToAPI()
-          console.log('Auto-saved property to API')
-        } catch (error) {
-          console.error('Auto-save failed:', error)
-          // Fall back to localStorage on API failure
-          saveToLocalStorage()
-        }
-      }, 2000) // Save after 2 seconds of inactivity
-
-      return () => clearTimeout(timeoutId)
+      triggerSave()
     }
-  }, [state.data, state.hasUnsavedChanges, saveToAPI, saveToLocalStorage])
+  }, [state.data, state.hasUnsavedChanges, triggerSave])
 
   const contextValue: OnboardingContextValue = {
     state,

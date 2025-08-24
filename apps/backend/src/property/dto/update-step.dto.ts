@@ -1,5 +1,7 @@
-import { IsOptional, IsString, IsEnum, ValidateNested, IsNumber, IsArray, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsEnum, ValidateNested, IsNumber, IsArray, IsBoolean, MinLength, MaxLength, Min, Max, IsPositive } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOwnershipShareValid, HasValidRent, HasUniqueUnitNumbers } from '../validators/ownership-share.validator';
 
 export type PropertyType = 'WEG' | 'MV';
 export type BuildingType = 'altbau' | 'neubau' | 'hochhaus' | 'mixed';
